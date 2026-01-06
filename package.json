@@ -1,0 +1,27 @@
+{
+  "name": "setup",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --mode client && vite build",
+    "start": "NODE_ENV=production PORT=8080 bun run dist/_worker.js"
+  },
+  "devDependencies": {
+    "@hono/vite-dev-server": "^0.24.0",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "vite": "^7.3.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "hono": "^4.11.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  }
+}
