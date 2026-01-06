@@ -1,6 +1,13 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
+import * as Sentry from "@sentry/bun";
+import env from "@/env.ts";
 
+// First, init Sentry to capture errors
+Sentry.init({
+  dsn: env.SENTRY_DSN,
+  sendDefaultPii: true,
+});
 const app = new Hono();
 
 app.get("/api/hello", (c) => {

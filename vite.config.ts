@@ -2,10 +2,18 @@ import { defineConfig } from "vite";
 import devServer from "@hono/vite-dev-server";
 import bunAdapter from "@hono/vite-dev-server/bun";
 import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig(({ mode, command }) => {
+  const resolveConfig = {
+    alias: {
+      "@": path.resolve(__dirname, "."),
+    },
+  };
+
   if (mode === "client") {
     return {
+      resolve: resolveConfig,
       build: {
         // Client builds to dist/ (which creates dist/static based on rollupOptions)
         outDir: "dist",
@@ -24,6 +32,7 @@ export default defineConfig(({ mode, command }) => {
     };
   } else {
     return {
+      resolve: resolveConfig,
       build: {
         minify: true,
         ssr: true, // Optimizes for Bun/Node

@@ -4,24 +4,40 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "infisical run -- concurrently --names \"DOCKER,APP\" -c \"blue,magenta\" \"bun run db:start\" \"bun run db:wait && bun run dev:app\"",
+    "dev:app": "concurrently --names \"VITE,STUDIO\" -c \"cyan,yellow\" \"vite\" \"bun run db:studio\"",
+    "db:studio": "drizzle-kit studio",
+    "db:start": "docker compose -f docker-compose.dev.yml up",
+    "db:wait": "bash -c 'until docker compose -f docker-compose.dev.yml exec -T postgres pg_isready -U ${POSTGRES_USER:-postgres} > /dev/null 2>&1; do sleep 1; done'",
+    "db:reset": "docker compose -f docker-compose.dev.yml down -v && rm -rf db && bun run db:start",
     "build": "vite build --mode client && vite build",
-    "start": "NODE_ENV=production PORT=8080 bun run dist/_worker.js"
+    "start": "NODE_ENV=production PORT=8080 bun run dist/_worker.js",
+    "import:staging": "bash scripts/import-staging.sh"
   },
   "devDependencies": {
     "@hono/vite-dev-server": "^0.24.0",
     "@types/bun": "latest",
+    "@types/pg": "^8.16.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
-    "vite": "^7.3.0"
+    "concurrently": "^9.0.0",
+    "vite": "^7.3.0",
+    "wait-on": "^8.0.0"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
+    "@sentry/bun": "^10.32.1",
+    "@t3-oss/env-core": "^0.13.10",
+    "better-auth": "^1.4.10",
+    "drizzle-kit": "^0.31.8",
+    "drizzle-orm": "^0.45.1",
     "hono": "^4.11.3",
+    "pg": "^8.16.3",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "zod": "^4.3.5"
   }
 }

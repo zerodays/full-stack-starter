@@ -9,7 +9,20 @@ bun install
 To run:
 
 ```bash
-bun run index.ts
+bun dev
 ```
 
-This project was created using `bun init` in bun v1.3.5. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+
+TODO:
+- biome
+- rpc type safety
+- entire fe
+- db sync from staging
+- logging
+  - be setup
+  - fe setup (send to be?)
+  - axiom
+- sentry fe
+- capacitor?
+- otel in axiom? maybe custom fe?
+- cleanup scripts in package.json
