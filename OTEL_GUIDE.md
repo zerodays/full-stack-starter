@@ -1,71 +1,120 @@
-# OpenTelemetry & Axiom Integration Guide
+# OpenTelemetry (OTel) Implementation Guide
 
-We have successfully integrated full-stack OpenTelemetry (OTel) tracing, exporting data to **Axiom**.
+This repository implements a **production-grade**, full-stack OpenTelemetry setup. It connects user interactions in the browser to backend operations and database queries into a single, distributed trace, exported to **Axiom**.
 
-## 🚀 Overview
+## 🚀 Architecture Overview
 
-This setup allows us to track a request from the user's browser (Frontend) all the way through to the backend (Hono/Bun), linked via a single Distributed Trace.
-
-- **Frontend**: Captures page loads, fetches, and interactions. Sends traces to a local proxy to keep API keys secure.
-- **Backend**: Captures API handling, database queries (simulated), and acts as a proxy for frontend traces.
-- **Axiom**: Acts as the centralized storage and visualization tool for all traces.
-
-## 🛠 What We Implemented
-
-### 1. Dependencies
-We installed the necessary OTel SDKs for both Node/Bun and the Web:
-- **Backend**: `@opentelemetry/sdk-node`, `@opentelemetry/exporter-trace-otlp-proto`.
-- **Frontend**: `@opentelemetry/sdk-trace-web`, `@opentelemetry/exporter-trace-otlp-http`.
-
-### 2. Environment Configuration
-New environment variables added to `env.ts`:
-- `AXIOM_TOKEN`: Your private Axiom API Token.
-- `AXIOM_DATASET`: The Axiom dataset name (must be type "Events").
-- `OTEL_SERVICE_NAME`: Service identity (default: `full-stack-starter`).
-
-### 3. Backend Instrumentation
-- **Initialization**: `server/instrumentation.ts` sets up the NodeSDK and OTLP exporter.
-- **Middleware**: A custom Hono middleware in `server/server.tsx` manually extracts `traceparent` headers from incoming requests and starts a server-side span. This ensures Bun's HTTP handling is properly traced.
-- **Proxy Endpoint**: `POST /api/otel/v1/traces` forwards frontend traces to Axiom, keeping the `AXIOM_TOKEN` server-side.
-
-### 4. Frontend Instrumentation
-- **Initialization**: `web/instrumentation.ts` sets up `WebTracerProvider`.
-- **Auto-Instrumentation**:
-  - `DocumentLoadInstrumentation`: Tracks page load performance.
-  - `FetchInstrumentation`: Automatically adds `traceparent` headers to outgoing API calls (CORS configured).
-
-### 5. Demo Feature
-- Added `GET /api/demo-trace` endpoint with an artificial delay.
-- Added a **"Trigger OpenTelemetry Trace"** button in the frontend to demonstrate the full trace waterfall.
-
-## ✅ How to Run & Verify
-
-1.  **Configure `.env`**:
-    ```bash
-    AXIOM_TOKEN="xapt-..."
-    AXIOM_DATASET="full-stack-traces"
-    ```
-2.  **Start the App**:
-    ```bash
-    bun run dev
-    ```
-3.  **Generate a Trace**:
-    - Open the app.
-    - Click **"Trigger OpenTelemetry Trace"**.
-4.  **View in Axiom**:
-    - Go to the **Explore** tab.
-    - Select your dataset.
-    - You will see a trace combining `full-stack-starter-web` (Client) and `full-stack-starter` (Server).
-
-## 📝 Remaining Work / TODOs
-
-While the foundation is solid, here is what can be improved:
-
-- [ ] **Database Instrumentation**: Add automatic tracing for Drizzle/Postgres queries (requires `@opentelemetry/instrumentation-pg`).
-- [ ] **Metrics**: Currently we only send *Traces*. We need to configure `MetricReader` to send numerical data (CPU, Memory, Request Counts) to Axiom's `MetricsDB`.
-- [ ] **Error Context**: Improve error attribute capture in the backend middleware (ensure stack traces are formatted nicely for Axiom).
-- [ ] **Production Tuning**: Review sampling rates. Currently, we sample 100% of traces (default), which might be expensive in high-traffic production.
-- [ ] **Deployment**: Ensure `AXIOM_TOKEN` is properly set in your deployment provider (e.g., Vercel/Fly/Railway).
+1.  **Frontend (React)**: Captures user interactions (clicks, page loads) and network requests.
+2.  **Trace Proxy**: A backend endpoint (`/api/otel/*`) that forwards frontend traces to Axiom. This keeps your API keys secret.
+3.  **Backend (Hono + Bun)**: Captures API handling and database operations.
+4.  **Context Propagation**: The `traceparent` HTTP header links the Frontend and Backend traces together.
 
 ---
-*Created by opencode*
+
+## 💻 Frontend Implementation
+
+### 1. Initialization (`web/instrumentation.ts`)
+We use the `WebTracerProvider` with two key auto-instrumentations:
+-   **`DocumentLoadInstrumentation`**: Tracks page load performance.
+-   **`FetchInstrumentation`**: Automatically injects the `traceparent` header into outgoing API calls.
+
+**Crucial Detail**: We use `ZoneContextManager`. This is required in JS/TS to keep track of the "current span" across asynchronous operations (Promises/`await`).
+
+### 2. Manual Tracing ("Wide Events")
+While auto-instrumentation covers HTTP requests, we often want to track business logic or user intent (e.g., "User clicked Buy"). We do this manually to create **"Wide Events"**—spans with rich context.
+
+**Example: Tracing a Button Click**
+```typescript
+// web/app.tsx
+import { trace } from "@opentelemetry/api";
+
+const triggerTrace = async () => {
+  const tracer = trace.getTracer("full-stack-starter-web");
+  
+  // Start a new Root Span for this interaction
+  await tracer.startActiveSpan("ui.interaction.click_demo_button", async (span) => {
+    try {
+      // Add Attributes (Context) -> This makes it a "Wide Event"
+      span.setAttribute("component", "App");
+      span.setAttribute("event", "click");
+      span.setAttribute("user.tier", "pro"); // Example
+
+      // Perform actions (the fetch trace will automatically become a child of this span)
+      await fetch("/api/demo-trace");
+      
+    } catch (e) {
+      // Capture errors on the span
+      span.recordException(e as Error);
+    } finally {
+      // Always end the span!
+      span.end();
+    }
+  });
+};
+```
+
+---
+
+## 🔙 Backend Implementation (Bun + Hono)
+
+### 1. Initialization (`server/instrumentation.ts`)
+We use `@opentelemetry/sdk-node` to initialize the OTel SDK *before* the app starts.
+
+### 2. Hono Middleware (The "Bun Adapter")
+In a standard Node.js Express app, OTel would automatically trace incoming HTTP requests. However, because we are using **Bun** and **Hono**, we need a custom middleware to extract the trace context from the frontend.
+
+**`server/server.tsx` Middleware Logic:**
+1.  **Extract**: Reads `traceparent` header from the request.
+2.  **Start Span**: Starts a new span representing the server processing time.
+3.  **Set Context**: Wraps the execution so any downstream spans (DB calls) become children of this request.
+
+### 3. Nested Spans
+To break down a long request into measurable steps, use nested spans:
+
+```typescript
+// server/server.tsx
+app.get("/api/demo-trace", async (c) => {
+  const tracer = trace.getTracer("my-service");
+
+  return await tracer.startActiveSpan("parent-operation", async (span) => {
+    
+    // Create a child span for a specific sub-task
+    await tracer.startActiveSpan("database.query", async (dbSpan) => {
+      dbSpan.setAttribute("db.statement", "SELECT * FROM users");
+      await db.query(...)
+      dbSpan.end();
+    });
+
+    span.end();
+    return c.json({ status: "ok" });
+  });
+});
+```
+
+---
+
+## ⚠️ Bun vs. Node.js: The "Pitfalls"
+
+### Why is this setup different from a standard Node.js app?
+
+In a standard **Node.js** environment, you would simply use `@opentelemetry/instrumentation-http`. This library "monkey-patches" the native `http` module. Since frameworks like Express build on top of `http`, you get tracing for free—no middleware required.
+
+**The Bun Difference:**
+Bun implements its own high-performance HTTP server (`Bun.serve`). It does **not** use Node's `http` module internally. Therefore, the standard OTel Node.js auto-instrumentation **does not work** for incoming HTTP requests in Bun.
+
+**The Solution:**
+We manually implement the "Entry Span" logic in a Hono middleware. This gives us full control and ensures traces are connected, bridging the gap until Bun has native OTel support or OTel releases a specific Bun instrumentation.
+
+---
+
+## ✅ Checklist for New Features
+
+When adding a new feature, follow this checklist to ensure visibility:
+
+1.  **Frontend**: Does this action initiate a meaningful user journey?
+    *   *Yes*: Wrap the event handler in `tracer.startActiveSpan`.
+    *   *No*: Let `FetchInstrumentation` handle the network calls automatically.
+2.  **Backend**: Does the route perform complex logic or DB queries?
+    *   *Yes*: Add child spans (`tracer.startActiveSpan`) around heavy operations (DB queries, external API calls).
+    *   *No*: The basic middleware span is likely enough.
+3.  **Attributes**: Did you add relevant IDs? (e.g., `user.id`, `order.id`, `project.id`). This allows you to filter effectively in Axiom.

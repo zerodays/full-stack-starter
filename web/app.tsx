@@ -1,3 +1,4 @@
+import { trace } from "@opentelemetry/api";
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
@@ -15,14 +16,26 @@ export default function App() {
   }, []);
 
   const triggerTrace = async () => {
-    try {
-      setMsg("Starting trace...");
-      const res = await fetch("/api/demo-trace");
-      const data = await res.json();
-      setMsg(data.message);
-    } catch (e) {
-      setMsg("Error triggering trace");
-    }
+    const tracer = trace.getTracer("full-stack-starter-web");
+    await tracer.startActiveSpan(
+      "ui.interaction.click_demo_button",
+      async (span) => {
+        try {
+          span.setAttribute("component", "App");
+          span.setAttribute("event", "click");
+
+          setMsg("Starting trace...");
+          const res = await fetch("/api/demo-trace");
+          const data = await res.json();
+          setMsg(data.message);
+        } catch (_e) {
+          span.recordException(_e as Error);
+          setMsg("Error triggering trace");
+        } finally {
+          span.end();
+        }
+      },
+    );
   };
 
   return (

@@ -104,11 +104,56 @@ app.get("/api/hello", (c) => {
 });
 
 app.get("/api/demo-trace", async (c) => {
-  // Simulate a slow database query or external API call
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  return c.json({
-    message: "Trace complete! Check Axiom for a distributed trace.",
-    timestamp: new Date().toISOString(),
+  const tracer = trace.getTracer(env.OTEL_SERVICE_NAME);
+
+  return await tracer.startActiveSpan("demo-operation", async (span) => {
+    try {
+      span.setAttribute("demo.type", "manual_trace");
+      span.setAttribute("user.id", "anonymous_demo_user");
+      span.addEvent("starting_simulation");
+
+      // 1. Simulate a Database Query
+      await tracer.startActiveSpan("database.query", async (dbSpan) => {
+        dbSpan.setAttribute("db.system", "postgres");
+        dbSpan.setAttribute(
+          "db.statement",
+          "SELECT * FROM users WHERE active = true",
+        );
+
+        // Simulate DB latency
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        dbSpan.addEvent("query_executed", { rows_returned: 42 });
+        dbSpan.end();
+      });
+
+      span.addEvent("processing_data");
+
+      // 2. Simulate External API Call or Heavy Processing
+      await tracer.startActiveSpan("process.data", async (procSpan) => {
+        procSpan.setAttribute("data.size_bytes", 1024);
+        procSpan.setAttribute("process.strategy", "fast-path");
+
+        // Simulate processing latency
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        procSpan.end();
+      });
+
+      span.addEvent("finished_simulation");
+
+      return c.json({
+        message:
+          "Full trace simulated! Check Axiom for the 'demo-operation' trace with nested spans.",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      span.recordException(error as Error);
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      throw error;
+    } finally {
+      span.end();
+    }
   });
 });
 
