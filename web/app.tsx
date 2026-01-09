@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
+import i18n from "./i18n/i18n";
 
 export default function App() {
+  const { t } = useTranslation("common");
+
   const [msg, setMsg] = useState("Loading...");
 
   useEffect(() => {
@@ -33,9 +37,19 @@ export default function App() {
       </div>
       <h1 className="font-bold text-4xl">React + Hono + Tailwind CSS</h1>
       <p className="text-lg">
-        Server says: <strong>{msg}</strong>
+        <Trans
+          i18nKey="serverSays"
+          values={{ message: msg }}
+          components={{ strong: <strong /> }}
+        />
       </p>
-      <Button>Test me</Button>
+      <Button
+        onClick={() =>
+          i18n.changeLanguage(i18n.language === "en" ? "sl" : "en")
+        }
+      >
+        {t("testMe")}
+      </Button>
     </div>
   );
 }
