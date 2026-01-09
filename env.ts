@@ -9,6 +9,9 @@ const env = createEnv({
     DATABASE_URL: z.string().url(),
     BETTER_AUTH_SECRET: z.string().min(1),
     BETTER_AUTH_URL: z.string().url(),
+    AXIOM_TOKEN: z.string().min(1).optional(),
+    AXIOM_DATASET: z.string().min(1).optional(),
+    OTEL_SERVICE_NAME: z.string().default("full-stack-starter"),
   },
 
   // TODO: client secrets
@@ -20,6 +23,9 @@ const env = createEnv({
     DATABASE_URL: Bun.env.DATABASE_URL,
     BETTER_AUTH_SECRET: Bun.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: Bun.env.BETTER_AUTH_URL,
+    AXIOM_TOKEN: Bun.env.AXIOM_TOKEN,
+    AXIOM_DATASET: Bun.env.AXIOM_DATASET,
+    OTEL_SERVICE_NAME: Bun.env.OTEL_SERVICE_NAME,
   },
 });
 export default env;

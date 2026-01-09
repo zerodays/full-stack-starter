@@ -14,15 +14,15 @@ bun dev
 
 
 TODO:
-- biome
-- rpc type safety
-- entire fe
-- db sync from staging
-- logging
-  - be setup
-  - fe setup (send to be?)
-  - axiom
-- sentry fe
-- capacitor?
-- otel in axiom? maybe custom fe?
-- cleanup scripts in package.json
+- [x] logging
+  - [x] be setup (OpenTelemetry Middleware)
+  - [x] fe setup (OTel Web SDK + Proxy)
+  - [x] axiom integration
+- [ ] biome (linting setup exists, strictly enforce?)
+- [ ] rpc type safety
+- [ ] db sync from staging
+- [ ] sentry fe
+- [ ] capacitor?
+- [ ] cleanup scripts in package.json
+
+> **Note:** See [OTEL_GUIDE.md](./OTEL_GUIDE.md) for details on the Logging/Tracing setup.

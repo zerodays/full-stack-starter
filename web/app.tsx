@@ -14,6 +14,17 @@ export default function App() {
       .then((data) => setMsg(data.message));
   }, []);
 
+  const triggerTrace = async () => {
+    try {
+      setMsg("Starting trace...");
+      const res = await fetch("/api/demo-trace");
+      const data = await res.json();
+      setMsg(data.message);
+    } catch (e) {
+      setMsg("Error triggering trace");
+    }
+  };
+
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-8">
       <div className="flex flex-row gap-4">
@@ -49,6 +60,9 @@ export default function App() {
         }
       >
         {t("testMe")}
+      </Button>
+      <Button variant="outline" onClick={triggerTrace}>
+        Trigger OpenTelemetry Trace
       </Button>
     </div>
   );

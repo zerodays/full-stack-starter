@@ -1,3 +1,10 @@
+import "@/server/instrumentation";
+import {
+  context,
+  propagation,
+  SpanStatusCode,
+  trace,
+} from "@opentelemetry/api";
 import * as Sentry from "@sentry/bun";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
@@ -10,8 +17,99 @@ Sentry.init({
 });
 const app = new Hono();
 
+// OpenTelemetry Middleware
+app.use("*", async (c, next) => {
+  // Skip trace proxy endpoint to avoid loops
+  if (c.req.path.startsWith("/api/otel")) {
+    return next();
+  }
+
+  const tracer = trace.getTracer(env.OTEL_SERVICE_NAME);
+  const activeContext = propagation.extract(context.active(), c.req.header());
+
+  return await context.with(activeContext, async () => {
+    return await tracer.startActiveSpan(
+      `${c.req.method} ${c.req.path}`,
+      async (span) => {
+        span.setAttribute("http.method", c.req.method);
+        span.setAttribute("http.url", c.req.url);
+
+        try {
+          await next();
+
+          span.setAttribute("http.status_code", c.res.status);
+          if (c.res.status >= 400) {
+            span.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: `HTTP ${c.res.status}`,
+            });
+          } else {
+            span.setStatus({ code: SpanStatusCode.OK });
+          }
+        } catch (error) {
+          span.recordException(error as Error);
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: (error as Error).message,
+          });
+          throw error;
+        } finally {
+          span.end();
+        }
+      },
+    );
+  });
+});
+
+app.post("/api/otel/v1/traces", async (c) => {
+  if (!env.AXIOM_TOKEN || !env.AXIOM_DATASET) {
+    // Silent fail or log? For now let's return 503 Service Unavailable
+    return c.json({ error: "Axiom not configured" }, 503);
+  }
+
+  try {
+    const body = await c.req.arrayBuffer();
+    const contentType =
+      c.req.header("Content-Type") || "application/x-protobuf";
+
+    const response = await fetch("https://api.axiom.co/v1/traces", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.AXIOM_TOKEN}`,
+        "x-axiom-dataset": env.AXIOM_DATASET,
+        "Content-Type": contentType,
+      },
+      body: body,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("Axiom error:", text);
+      return c.json(
+        { error: "Upstream error", details: text },
+        // biome-ignore lint/suspicious/noExplicitAny: response.status is compatible
+        response.status as any,
+      );
+    }
+
+    return c.json({ success: true });
+  } catch (e) {
+    console.error("Proxy error:", e);
+    return c.json({ error: "Proxy error" }, 500);
+  }
+});
+
 app.get("/api/hello", (c) => {
   return c.json({ message: "Hello from the Hono Server!" });
+});
+
+app.get("/api/demo-trace", async (c) => {
+  // Simulate a slow database query or external API call
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  return c.json({
+    message: "Trace complete! Check Axiom for a distributed trace.",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 if (process.env.NODE_ENV === "production") {
