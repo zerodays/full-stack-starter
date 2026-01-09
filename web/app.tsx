@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { Button } from "~/components/ui/button";
 
 export default function App() {
   const [msg, setMsg] = useState("Loading...");
@@ -22,6 +23,7 @@ export default function App() {
       <p className="text-lg">
         Server says: <strong>{msg}</strong>
       </p>
+      <Button>Test me</Button>
     </div>
   );
 }

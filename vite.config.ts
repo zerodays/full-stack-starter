@@ -9,6 +9,7 @@ export default defineConfig(({ mode, command }) => {
   const resolveConfig = {
     alias: {
       "@": path.resolve(__dirname, "."),
+      "~": path.resolve(__dirname, "./web"),
     },
   };
 

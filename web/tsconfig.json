@@ -2,7 +2,11 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "react"
+    "jsxImportSource": "react",
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./*"]
+    }
   },
   "include": ["./**/*.tsx", "./**/*.ts"]
 }
