@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "infisical run -- concurrently --names \"DOCKER,APP\" -c \"blue,magenta\" \"bun run db:start\" \"bun run db:wait && bun run dev:app\"",
+    "dev": "infisical run -- bun -b concurrently --names \"DOCKER,APP\" -c \"blue,magenta\" \"bun run db:start\" \"bun run db:wait && bun run dev:app\"",
     "dev:app": "concurrently --names \"VITE,STUDIO\" -c \"cyan,yellow\" \"vite\" \"bun run db:studio\"",
     "db:studio": "drizzle-kit studio",
     "db:start": "docker compose -f docker-compose.dev.yml up",
@@ -31,6 +31,7 @@
   "dependencies": {
     "@sentry/bun": "^10.32.1",
     "@t3-oss/env-core": "^0.13.10",
+    "@tailwindcss/vite": "^4.1.18",
     "better-auth": "^1.4.10",
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",
@@ -38,6 +39,7 @@
     "pg": "^8.16.3",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "tailwindcss": "^4.1.18",
     "zod": "^4.3.5"
   }
 }

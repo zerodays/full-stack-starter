@@ -3,6 +3,7 @@ import devServer from "@hono/vite-dev-server";
 import bunAdapter from "@hono/vite-dev-server/bun";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig(({ mode, command }) => {
   const resolveConfig = {
@@ -28,7 +29,7 @@ export default defineConfig(({ mode, command }) => {
         },
         copyPublicDir: false,
       },
-      plugins: [react()],
+      plugins: [react(), tailwindcss()],
     };
   } else {
     return {
@@ -54,6 +55,7 @@ export default defineConfig(({ mode, command }) => {
         entries: ["./web/client.ts", "./web/app.tsx"],
       },
       plugins: [
+        tailwindcss(),
         command === "serve" ? react() : undefined,
         devServer({
           entry: "./server/server.tsx",
