@@ -1,11 +1,6 @@
 import "@vitejs/plugin-react/preamble";
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./app";
-import "./styles.css";
+import "~/styles.css";
+import { ViteReactSSG } from "vite-react-ssg";
+import { routes } from "./router";
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+export const createRoot = ViteReactSSG({ routes });
