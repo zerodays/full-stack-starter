@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 
 export default function App() {
@@ -11,15 +11,27 @@ export default function App() {
   }, []);
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center flex-col gap-8">
+    <div className="flex h-screen w-screen flex-col items-center justify-center gap-8">
       <div className="flex flex-row gap-4">
-        <img src="https://react.dev/images/brand/logo_light.svg" alt="React Logo" className="w-10 h-10" />
-        <p className="text-4xl font-bold">+</p>
-        <img src="https://hono.dev/images/logo.svg" alt="Hono Logo" className="w-10 h-10" />
-        <p className="text-4xl font-bold">+</p>
-        <img src="https://tailwindcss.com/_next/static/media/tailwindcss-mark.d52e9897.svg" alt="Tailwind CSS Logo" className="w-10 h-10" />
+        <img
+          src="https://react.dev/images/brand/logo_light.svg"
+          alt="React Logo"
+          className="h-10 w-10"
+        />
+        <p className="font-bold text-4xl">+</p>
+        <img
+          src="https://hono.dev/images/logo.svg"
+          alt="Hono Logo"
+          className="h-10 w-10"
+        />
+        <p className="font-bold text-4xl">+</p>
+        <img
+          src="https://tailwindcss.com/_next/static/media/tailwindcss-mark.d52e9897.svg"
+          alt="Tailwind CSS Logo"
+          className="h-10 w-10"
+        />
       </div>
-      <h1 className="text-4xl font-bold">React + Hono + Tailwind CSS</h1>
+      <h1 className="font-bold text-4xl">React + Hono + Tailwind CSS</h1>
       <p className="text-lg">
         Server says: <strong>{msg}</strong>
       </p>

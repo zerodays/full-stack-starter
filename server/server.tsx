@@ -1,6 +1,6 @@
+import * as Sentry from "@sentry/bun";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
-import * as Sentry from "@sentry/bun";
 import env from "@/env.ts";
 
 // First, init Sentry to capture errors
@@ -27,9 +27,7 @@ app.get("*", (c) => {
         <meta charSet="utf-8" />
         <title>Bun + Hono + React</title>
         {isProd ? (
-          <>
-            <script type="module" src="/static/client.js"></script>
-          </>
+          <script type="module" src="/static/client.js"></script>
         ) : (
           <script type="module" src="/web/client.tsx"></script>
         )}

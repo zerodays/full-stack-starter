@@ -12,9 +12,14 @@
     "db:reset": "docker compose -f docker-compose.dev.yml down -v && rm -rf db && bun run db:start",
     "build": "vite build --mode client && vite build",
     "start": "NODE_ENV=production PORT=8080 bun run dist/_worker.js",
-    "import:staging": "bash scripts/import-staging.sh"
+    "import:staging": "bash scripts/import-staging.sh",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "format": "biome format .",
+    "format:fix": "biome format . --write"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.11",
     "@hono/vite-dev-server": "^0.24.0",
     "@types/bun": "latest",
     "@types/pg": "^8.16.0",
