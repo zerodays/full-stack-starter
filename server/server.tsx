@@ -153,29 +153,33 @@ app.get("/api/demo-trace", async (c) => {
   });
 });
 
-if (process.env.NODE_ENV === "production") {
-  app.use("/static/*", serveStatic({ root: "./dist" }));
+const isProd = process.env.NODE_ENV === "production";
+
+if (isProd) {
+  // Serve pre-built static files from dist-static directory.
+  // Rewrites paths to map clean URLs to their corresponding HTML files.
+  app.use(
+    "*",
+    serveStatic({
+      root: "./dist-static",
+      rewriteRequestPath: (requestPath) => {
+        if (requestPath === "/") return "/index.html";
+        // Keep asset and JSON paths as-is
+        if (requestPath.includes(".")) return requestPath;
+        // Map clean URLs (e.g., /about) to their prerendered HTML
+        return `${requestPath}.html`;
+      },
+    }),
+  );
 }
 
-// HTML entry point (different for dev and prod)
-app.get("*", (c) => {
-  const isProd = process.env.NODE_ENV === "production";
-  return c.html(
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <title>Bun + Hono + React</title>
-        {isProd ? (
-          <script type="module" src="/static/client.js"></script>
-        ) : (
-          <script type="module" src="/web/client.tsx"></script>
-        )}
-      </head>
-      <body>
-        <div id="root"></div>
-      </body>
-    </html>,
-  );
+// SPA fallback: serve index.html for any unmatched routes.
+// This allows client-side routing to handle the path instead of returning 404.
+app.get("*", async (c) => {
+  const html = await Bun.file(
+    isProd ? "./dist-static/index.html" : "./index.html",
+  ).text();
+  return c.html(html);
 });
 
 export default app;
