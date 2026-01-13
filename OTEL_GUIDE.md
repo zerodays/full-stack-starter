@@ -14,42 +14,48 @@ This repository implements a **production-grade**, full-stack OpenTelemetry setu
 ## 💻 Frontend Implementation
 
 ### 1. Initialization (`web/instrumentation.ts`)
+
 We use the `WebTracerProvider` with two key auto-instrumentations:
--   **`DocumentLoadInstrumentation`**: Tracks page load performance.
--   **`FetchInstrumentation`**: Automatically injects the `traceparent` header into outgoing API calls.
+
+- **`DocumentLoadInstrumentation`**: Tracks page load performance.
+- **`FetchInstrumentation`**: Automatically injects the `traceparent` header into outgoing API calls.
 
 **Crucial Detail**: We use `ZoneContextManager`. This is required in JS/TS to keep track of the "current span" across asynchronous operations (Promises/`await`).
 
 ### 2. Manual Tracing ("Wide Events")
+
 While auto-instrumentation covers HTTP requests, we often want to track business logic or user intent (e.g., "User clicked Buy"). We do this manually to create **"Wide Events"**—spans with rich context.
 
 **Example: Tracing a Button Click**
+
 ```typescript
 // web/app.tsx
 import { trace } from "@opentelemetry/api";
 
 const triggerTrace = async () => {
   const tracer = trace.getTracer("full-stack-starter-web");
-  
-  // Start a new Root Span for this interaction
-  await tracer.startActiveSpan("ui.interaction.click_demo_button", async (span) => {
-    try {
-      // Add Attributes (Context) -> This makes it a "Wide Event"
-      span.setAttribute("component", "App");
-      span.setAttribute("event", "click");
-      span.setAttribute("user.tier", "pro"); // Example
 
-      // Perform actions (the fetch trace will automatically become a child of this span)
-      await fetch("/api/demo-trace");
-      
-    } catch (e) {
-      // Capture errors on the span
-      span.recordException(e as Error);
-    } finally {
-      // Always end the span!
-      span.end();
-    }
-  });
+  // Start a new Root Span for this interaction
+  await tracer.startActiveSpan(
+    "ui.interaction.click_demo_button",
+    async (span) => {
+      try {
+        // Add Attributes (Context) -> This makes it a "Wide Event"
+        span.setAttribute("component", "App");
+        span.setAttribute("event", "click");
+        span.setAttribute("user.tier", "pro"); // Example
+
+        // Perform actions (the fetch trace will automatically become a child of this span)
+        await fetch("/api/demo-trace");
+      } catch (e) {
+        // Capture errors on the span
+        span.recordException(e as Error);
+      } finally {
+        // Always end the span!
+        span.end();
+      }
+    },
+  );
 };
 ```
 
@@ -58,17 +64,21 @@ const triggerTrace = async () => {
 ## 🔙 Backend Implementation (Bun + Hono)
 
 ### 1. Initialization (`server/instrumentation.ts`)
-We use `@opentelemetry/sdk-node` to initialize the OTel SDK *before* the app starts.
+
+We use `@opentelemetry/sdk-node` to initialize the OTel SDK _before_ the app starts.
 
 ### 2. Hono Middleware (The "Bun Adapter")
+
 In a standard Node.js Express app, OTel would automatically trace incoming HTTP requests. However, because we are using **Bun** and **Hono**, we need a custom middleware to extract the trace context from the frontend.
 
 **`server/server.tsx` Middleware Logic:**
+
 1.  **Extract**: Reads `traceparent` header from the request.
 2.  **Start Span**: Starts a new span representing the server processing time.
 3.  **Set Context**: Wraps the execution so any downstream spans (DB calls) become children of this request.
 
 ### 3. Nested Spans
+
 To break down a long request into measurable steps, use nested spans:
 
 ```typescript
@@ -77,7 +87,7 @@ app.get("/api/demo-trace", async (c) => {
   const tracer = trace.getTracer("my-service");
 
   return await tracer.startActiveSpan("parent-operation", async (span) => {
-    
+
     // Create a child span for a specific sub-task
     await tracer.startActiveSpan("database.query", async (dbSpan) => {
       dbSpan.setAttribute("db.statement", "SELECT * FROM users");
@@ -112,9 +122,10 @@ We manually implement the "Entry Span" logic in a Hono middleware. This gives us
 When adding a new feature, follow this checklist to ensure visibility:
 
 1.  **Frontend**: Does this action initiate a meaningful user journey?
-    *   *Yes*: Wrap the event handler in `tracer.startActiveSpan`.
-    *   *No*: Let `FetchInstrumentation` handle the network calls automatically.
+    - _Yes_: Wrap the event handler in `tracer.startActiveSpan`.
+    - _No_: Let `FetchInstrumentation` handle the network calls automatically.
 2.  **Backend**: Does the route perform complex logic or DB queries?
-    *   *Yes*: Add child spans (`tracer.startActiveSpan`) around heavy operations (DB queries, external API calls).
-    *   *No*: The basic middleware span is likely enough.
+    - _Yes_: Add child spans (`tracer.startActiveSpan`) around heavy operations (DB queries, external API calls).
+    - _No_: The basic middleware span is likely enough.
 3.  **Attributes**: Did you add relevant IDs? (e.g., `user.id`, `order.id`, `project.id`). This allows you to filter effectively in Axiom.
+4.  **Error Handling**: "If you try/catch an error, did you remember to span.recordException(e) before re-throwing it?"

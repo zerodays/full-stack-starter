@@ -1,3 +1,4 @@
+import { db } from "@/server/db";
 import "@/server/instrumentation";
 import {
   context,
@@ -6,8 +7,10 @@ import {
   trace,
 } from "@opentelemetry/api";
 import * as Sentry from "@sentry/bun";
+import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
+import { routePath } from "hono/route";
 import env from "@/env.ts";
 
 // First, init Sentry to capture errors
@@ -29,7 +32,8 @@ app.use("*", async (c, next) => {
 
   return await context.with(activeContext, async () => {
     return await tracer.startActiveSpan(
-      `${c.req.method} ${c.req.path}`,
+      // `${c.req.method} ${c.req.path}`,
+      `${c.req.method} ${routePath(c) || c.req.path}`,
       async (span) => {
         span.setAttribute("http.method", c.req.method);
         span.setAttribute("http.url", c.req.url);
@@ -112,20 +116,12 @@ app.get("/api/demo-trace", async (c) => {
       span.setAttribute("user.id", "anonymous_demo_user");
       span.addEvent("starting_simulation");
 
-      // 1. Simulate a Database Query
-      await tracer.startActiveSpan("database.query", async (dbSpan) => {
-        dbSpan.setAttribute("db.system", "postgres");
-        dbSpan.setAttribute(
-          "db.statement",
-          "SELECT * FROM users WHERE active = true",
-        );
-
-        // Simulate DB latency
-        await new Promise((resolve) => setTimeout(resolve, 300));
-
-        dbSpan.addEvent("query_executed", { rows_returned: 42 });
-        dbSpan.end();
-      });
+      // 1. Real Database Query (Auto-instrumented)
+      // We don't need to wrap this in a manual span or set attributes.
+      // The @opentelemetry/instrumentation-pg package handles it automatically.
+      await db.execute(
+        sql`SELECT 1 as "connection_test", NOW() as "current_time"`,
+      );
 
       span.addEvent("processing_data");
 
