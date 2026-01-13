@@ -1,8 +1,8 @@
-import { trace } from "@opentelemetry/api";
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
 import i18n from "./i18n/i18n";
+import { withSpan } from "./tracing";
 
 export default function App() {
   const { t } = useTranslation("common");
@@ -16,24 +16,15 @@ export default function App() {
   }, []);
 
   const triggerTrace = async () => {
-    const tracer = trace.getTracer("full-stack-starter-web");
-    await tracer.startActiveSpan(
-      "ui.interaction.click_demo_button",
-      async (span) => {
-        try {
-          span.setAttribute("component", "App");
-          span.setAttribute("event", "click");
+    setMsg("Starting trace...");
 
-          setMsg("Starting trace...");
-          const res = await fetch("/api/demo-trace");
-          const data = await res.json();
-          setMsg(data.message);
-        } catch (_e) {
-          span.recordException(_e as Error);
-          setMsg("Error triggering trace");
-        } finally {
-          span.end();
-        }
+    await withSpan(
+      "ui.click.demo_button",
+      { component: "App", event: "click" },
+      async () => {
+        const res = await fetch("/api/demo-trace");
+        const data = await res.json();
+        setMsg(data.message);
       },
     );
   };

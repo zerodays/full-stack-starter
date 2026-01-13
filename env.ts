@@ -11,7 +11,7 @@ const env = createEnv({
     BETTER_AUTH_URL: z.string().url(),
     AXIOM_TOKEN: z.string().min(1).optional(),
     AXIOM_DATASET: z.string().min(1).optional(),
-    OTEL_SERVICE_NAME: z.string().default("full-stack-starter"),
+    OTEL_SERVICE_NAME: z.string().default("server"),
   },
 
   // TODO: client secrets

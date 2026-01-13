@@ -17,7 +17,7 @@ export function initInstrumentation() {
 
   const provider = new WebTracerProvider({
     resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: "full-stack-starter-web",
+      [ATTR_SERVICE_NAME]: "web",
     }),
     spanProcessors: [new BatchSpanProcessor(exporter)],
   });
@@ -31,7 +31,7 @@ export function initInstrumentation() {
       new DocumentLoadInstrumentation(),
       new FetchInstrumentation({
         ignoreUrls: [/.*\/api\/otel\/.*/],
-        propagateTraceHeaderCorsUrls: [/.+/g],
+        propagateTraceHeaderCorsUrls: [/.+/],
       }),
     ],
   });

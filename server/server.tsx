@@ -1,17 +1,28 @@
-import { db } from "@/server/db";
+// IMPORTANT: Instrumentation must be first to patch modules before they're loaded
 import "@/server/instrumentation";
+
+import { db } from "@/server/db";
 import {
   context,
   propagation,
+  SpanKind,
   SpanStatusCode,
   trace,
 } from "@opentelemetry/api";
+import {
+  ATTR_HTTP_REQUEST_METHOD,
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_URL_FULL,
+} from "@opentelemetry/semantic-conventions";
 import * as Sentry from "@sentry/bun";
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { routePath } from "hono/route";
 import env from "@/env.ts";
+
+// TODO: Uncomment when Better Auth is set up
+// import { auth } from "@/server/auth";
 
 // First, init Sentry to capture errors
 Sentry.init({
@@ -20,7 +31,7 @@ Sentry.init({
 });
 const app = new Hono();
 
-// OpenTelemetry Middleware
+// OpenTelemetry Middleware - auto-traces all requests and injects user context
 app.use("*", async (c, next) => {
   // Skip trace proxy endpoint to avoid loops
   if (c.req.path.startsWith("/api/otel")) {
@@ -31,17 +42,37 @@ app.use("*", async (c, next) => {
   const activeContext = propagation.extract(context.active(), c.req.header());
 
   return await context.with(activeContext, async () => {
+    // Start with the raw path, update to matched route after next()
     return await tracer.startActiveSpan(
-      // `${c.req.method} ${c.req.path}`,
-      `${c.req.method} ${routePath(c) || c.req.path}`,
+      `${c.req.method} ${c.req.path}`,
+      { kind: SpanKind.SERVER },
       async (span) => {
-        span.setAttribute("http.method", c.req.method);
-        span.setAttribute("http.url", c.req.url);
+        span.setAttribute(ATTR_HTTP_REQUEST_METHOD, c.req.method);
+        span.setAttribute(ATTR_URL_FULL, c.req.url);
+
+        // Auto-inject user context from Better Auth session
+        // TODO: Uncomment when Better Auth is set up
+        // try {
+        //   const session = await auth.api.getSession({ headers: c.req.raw.headers });
+        //   if (session?.user) {
+        //     span.setAttribute("user.id", session.user.id);
+        //     span.setAttribute("user.email", session.user.email);
+        //   }
+        // } catch {
+        //   // No session or auth error - continue without user context
+        // }
 
         try {
           await next();
 
-          span.setAttribute("http.status_code", c.res.status);
+          // Update span name with matched route pattern (e.g., /api/users/:id)
+          const matchedRoute = routePath(c);
+          if (matchedRoute && matchedRoute !== "/*") {
+            span.updateName(`${c.req.method} ${matchedRoute}`);
+            span.setAttribute("http.route", matchedRoute);
+          }
+
+          span.setAttribute(ATTR_HTTP_RESPONSE_STATUS_CODE, c.res.status);
           if (c.res.status >= 400) {
             span.setStatus({
               code: SpanStatusCode.ERROR,
@@ -108,48 +139,24 @@ app.get("/api/hello", (c) => {
 });
 
 app.get("/api/demo-trace", async (c) => {
-  const tracer = trace.getTracer(env.OTEL_SERVICE_NAME);
+  // This DB query is auto-traced by @opentelemetry/instrumentation-pg
+  await db.execute(sql`SELECT 1 as "connection_test", NOW() as "current_time"`);
 
-  return await tracer.startActiveSpan("demo-operation", async (span) => {
-    try {
-      span.setAttribute("demo.type", "manual_trace");
-      span.setAttribute("user.id", "anonymous_demo_user");
-      span.addEvent("starting_simulation");
+  // Only use withSpan when you need custom business logic grouping
+  const { withSpan } = await import("@/server/tracing");
 
-      // 1. Real Database Query (Auto-instrumented)
-      // We don't need to wrap this in a manual span or set attributes.
-      // The @opentelemetry/instrumentation-pg package handles it automatically.
-      await db.execute(
-        sql`SELECT 1 as "connection_test", NOW() as "current_time"`,
-      );
+  await withSpan(
+    "demo.external_api_call",
+    { "demo.type": "simulation", "api.endpoint": "https://example.com" },
+    async () => {
+      // Simulate external API latency
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    },
+  );
 
-      span.addEvent("processing_data");
-
-      // 2. Simulate External API Call or Heavy Processing
-      await tracer.startActiveSpan("process.data", async (procSpan) => {
-        procSpan.setAttribute("data.size_bytes", 1024);
-        procSpan.setAttribute("process.strategy", "fast-path");
-
-        // Simulate processing latency
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        procSpan.end();
-      });
-
-      span.addEvent("finished_simulation");
-
-      return c.json({
-        message:
-          "Full trace simulated! Check Axiom for the 'demo-operation' trace with nested spans.",
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      span.recordException(error as Error);
-      span.setStatus({ code: SpanStatusCode.ERROR });
-      throw error;
-    } finally {
-      span.end();
-    }
+  return c.json({
+    message: "Trace complete! Check Axiom for the demo trace.",
+    timestamp: new Date().toISOString(),
   });
 });
 
