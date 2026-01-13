@@ -3,6 +3,7 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import { DocumentLoadInstrumentation } from "@opentelemetry/instrumentation-document-load";
 import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch";
+import { XMLHttpRequestInstrumentation } from "@opentelemetry/instrumentation-xml-http-request";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { WebTracerProvider } from "@opentelemetry/sdk-trace-web";
@@ -30,6 +31,10 @@ export function initInstrumentation() {
     instrumentations: [
       new DocumentLoadInstrumentation(),
       new FetchInstrumentation({
+        ignoreUrls: [/.*\/api\/otel\/.*/],
+        propagateTraceHeaderCorsUrls: [/.+/],
+      }),
+      new XMLHttpRequestInstrumentation({
         ignoreUrls: [/.*\/api\/otel\/.*/],
         propagateTraceHeaderCorsUrls: [/.+/],
       }),

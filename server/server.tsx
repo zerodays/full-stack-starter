@@ -20,6 +20,8 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { routePath } from "hono/route";
 import env from "@/env.ts";
+const { logger } = await import("@/server/logger");
+const { withSpan } = await import("@/server/tracing");
 
 // TODO: Uncomment when Better Auth is set up
 // import { auth } from "@/server/auth";
@@ -99,6 +101,7 @@ app.use("*", async (c, next) => {
 app.post("/api/otel/v1/traces", async (c) => {
   if (!env.AXIOM_TOKEN || !env.AXIOM_DATASET) {
     // Silent fail or log? For now let's return 503 Service Unavailable
+    logger.error("Axiom not configured for trace proxy");
     return c.json({ error: "Axiom not configured" }, 503);
   }
 
@@ -139,20 +142,37 @@ app.get("/api/hello", (c) => {
 });
 
 app.get("/api/demo-trace", async (c) => {
+  // Logging: automatically includes traceId and spanId
+  logger.info("Demo trace started");
+
   // This DB query is auto-traced by @opentelemetry/instrumentation-pg
   await db.execute(sql`SELECT 1 as "connection_test", NOW() as "current_time"`);
+  logger.info({ query: "connection_test" }, "Database query completed");
 
   // Only use withSpan when you need custom business logic grouping
-  const { withSpan } = await import("@/server/tracing");
-
   await withSpan(
     "demo.external_api_call",
     { "demo.type": "simulation", "api.endpoint": "https://example.com" },
-    async () => {
+    async (span) => {
+      // Events: timestamped markers within a span
+      span.addEvent("api.request_started", {
+        "http.method": "GET",
+        "http.url": "https://example.com/api",
+      });
+
       // Simulate external API latency
       await new Promise((resolve) => setTimeout(resolve, 500));
+
+      span.addEvent("api.response_received", {
+        "http.status_code": 200,
+        "response.size_bytes": 1024,
+      });
+
+      logger.info({ latency: 500 }, "External API call completed");
     },
   );
+
+  logger.info("Demo trace completed");
 
   return c.json({
     message: "Trace complete! Check Axiom for the demo trace.",

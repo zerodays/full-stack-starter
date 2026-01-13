@@ -10,7 +10,7 @@ This app uses OpenTelemetry to trace requests from browser to database. Traces a
 
 | Layer | What's traced |
 |-------|--------------|
-| Frontend | Page loads, all `fetch()` calls |
+| Frontend | Page loads, all `fetch()` and XHR (axios) calls |
 | Backend | All HTTP requests, PostgreSQL queries |
 | Cross-service | Trace context propagation via `traceparent` header |
 
@@ -141,6 +141,67 @@ try {
   return fallbackValue; // Error is recorded but we continue
 }
 ```
+
+---
+
+## Logging with trace context
+
+Use the trace-aware logger to automatically include `traceId` and `spanId` in every log entry:
+
+```typescript
+import { logger } from "@/server/logger";
+
+// Basic logging
+logger.info("User logged in");
+
+// With structured data
+logger.info({ userId: 123, plan: "pro" }, "User logged in");
+
+// Log levels: trace, debug, info, warn, error, fatal
+logger.error({ err: error }, "Payment failed");
+```
+
+**Output when inside a traced request:**
+```json
+{"level":30,"traceId":"abc123...","spanId":"def456...","userId":123,"msg":"User logged in"}
+```
+
+This lets you search logs by trace ID in your logging platform and correlate with Axiom traces.
+
+**Note:** Logs go to stdout, not Axiom. Your hosting platform captures them. Use `LOG_LEVEL` env var to control verbosity (default: `info`).
+
+---
+
+## Span events
+
+Events are timestamped markers *within* a span. Use them for milestones, retries, or state changes:
+
+```typescript
+await withSpan("order.process", async (span) => {
+  span.addEvent("validation.started");
+  await validate(order);
+  span.addEvent("validation.passed");
+
+  span.addEvent("payment.started", { "payment.method": "stripe" });
+  await charge(order);
+  span.addEvent("payment.completed", { "payment.id": chargeId });
+});
+```
+
+Or add events to the current span without creating a new one:
+
+```typescript
+import { trace } from "@opentelemetry/api";
+
+const span = trace.getActiveSpan();
+span?.addEvent("cache.miss", { "cache.key": "user:123" });
+```
+
+Events appear as markers on the span timeline in Axiom.
+
+**Events vs Logs:**
+- Events = part of the trace, visible in Axiom span details
+- Logs = separate stream, searchable by trace ID
 
 ---
 

@@ -84,12 +84,13 @@ We've disabled biome's import organizer for this file to preserve the order.
 
 | File | Purpose |
 |------|---------|
-| `web/instrumentation.ts` | Browser SDK setup (WebTracerProvider, fetch/document-load auto-instrumentation) |
+| `web/instrumentation.ts` | Browser SDK setup (WebTracerProvider, fetch/XHR/document-load auto-instrumentation) |
 | `web/tracing.ts` | Frontend helpers: `withSpan`, `addSpanAttributes`, `recordSpanError` |
 | `web/client.tsx` | Calls `initInstrumentation()` before app loads |
 | `server/instrumentation.ts` | Node SDK setup (auto-instrumentations, Axiom exporter) |
 | `server/server.tsx` | Hono middleware for entry spans + trace proxy endpoint |
 | `server/tracing.ts` | Backend helpers: `withSpan`, `addSpanAttributes`, `recordSpanError` |
+| `server/logger.ts` | Trace-aware Pino logger (auto-injects traceId/spanId) |
 | `env.ts` | OTEL config schema (AXIOM_TOKEN, AXIOM_DATASET, OTEL_SERVICE_NAME) |
 
 ---
@@ -101,8 +102,9 @@ We've disabled biome's import organizer for this file to preserve the order.
 | `AXIOM_TOKEN` | - | Axiom API token (required for tracing to work) |
 | `AXIOM_DATASET` | - | Axiom dataset name (required for tracing to work) |
 | `OTEL_SERVICE_NAME` | `server` | Backend service name in traces |
+| `LOG_LEVEL` | `info` | Pino log level (trace, debug, info, warn, error, fatal) |
 
-Frontend service name is hardcoded to `web` (set in vite.config.ts).
+Frontend service name is hardcoded to `web` (set in web/instrumentation.ts).
 
 Without `AXIOM_TOKEN` and `AXIOM_DATASET`, tracing is silently disabled.
 
@@ -129,7 +131,6 @@ Without `AXIOM_TOKEN` and `AXIOM_DATASET`, tracing is silently disabled.
 
 - [ ] **Custom Axiom dashboard** - Pre-built queries for common debugging scenarios
 - [ ] **Sampling configuration** - Uncomment in `server/instrumentation.ts` when traffic grows
-- [ ] **Trace-aware logging** - Include trace IDs in console logs for correlation
 
 ### Won't do (for now)
 
