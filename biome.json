@@ -8,18 +8,6 @@
   "files": {
     "ignoreUnknown": false
   },
-  "overrides": [
-    {
-      "includes": ["server/server.tsx"],
-      "assist": {
-        "actions": {
-          "source": {
-            "organizeImports": "off"
-          }
-        }
-      }
-    }
-  ],
   "formatter": {
     "enabled": true,
     "indentStyle": "space"

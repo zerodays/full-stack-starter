@@ -1,5 +1,6 @@
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch"; // <--- IMPORT THIS
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 // import { TraceIdRatioBasedSampler } from "@opentelemetry/sdk-trace-base";
@@ -29,6 +30,10 @@ if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
         "@opentelemetry/instrumentation-fs": { enabled: false },
         "@opentelemetry/instrumentation-dns": { enabled: false },
         "@opentelemetry/instrumentation-net": { enabled: false },
+      }),
+      new FetchInstrumentation({
+        ignoreNetworkEvents: true,
+        propagateTraceHeaderCorsUrls: [/.+/], // Propagate headers to all domains (or restrict to your internal APIs)
       }),
     ],
   });

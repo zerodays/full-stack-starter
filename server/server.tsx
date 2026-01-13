@@ -1,25 +1,14 @@
 // IMPORTANT: Instrumentation must be first to patch modules before they're loaded
 import "@/server/instrumentation";
 
-import { db } from "@/server/db";
-import {
-  context,
-  propagation,
-  SpanKind,
-  SpanStatusCode,
-  trace,
-} from "@opentelemetry/api";
-import {
-  ATTR_HTTP_REQUEST_METHOD,
-  ATTR_HTTP_RESPONSE_STATUS_CODE,
-  ATTR_URL_FULL,
-} from "@opentelemetry/semantic-conventions";
+import { httpInstrumentationMiddleware } from "@hono/otel";
 import * as Sentry from "@sentry/bun";
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
-import { routePath } from "hono/route";
 import env from "@/env.ts";
+import { db } from "@/server/db";
+
 const { logger } = await import("@/server/logger");
 const { withSpan } = await import("@/server/tracing");
 
@@ -32,71 +21,6 @@ Sentry.init({
   sendDefaultPii: true,
 });
 const app = new Hono();
-
-// OpenTelemetry Middleware - auto-traces all requests and injects user context
-app.use("*", async (c, next) => {
-  // Skip trace proxy endpoint to avoid loops
-  if (c.req.path.startsWith("/api/otel")) {
-    return next();
-  }
-
-  const tracer = trace.getTracer(env.OTEL_SERVICE_NAME);
-  const activeContext = propagation.extract(context.active(), c.req.header());
-
-  return await context.with(activeContext, async () => {
-    // Start with the raw path, update to matched route after next()
-    return await tracer.startActiveSpan(
-      `${c.req.method} ${c.req.path}`,
-      { kind: SpanKind.SERVER },
-      async (span) => {
-        span.setAttribute(ATTR_HTTP_REQUEST_METHOD, c.req.method);
-        span.setAttribute(ATTR_URL_FULL, c.req.url);
-
-        // Auto-inject user context from Better Auth session
-        // TODO: Uncomment when Better Auth is set up
-        // try {
-        //   const session = await auth.api.getSession({ headers: c.req.raw.headers });
-        //   if (session?.user) {
-        //     span.setAttribute("user.id", session.user.id);
-        //     span.setAttribute("user.email", session.user.email);
-        //   }
-        // } catch {
-        //   // No session or auth error - continue without user context
-        // }
-
-        try {
-          await next();
-
-          // Update span name with matched route pattern (e.g., /api/users/:id)
-          const matchedRoute = routePath(c);
-          if (matchedRoute && matchedRoute !== "/*") {
-            span.updateName(`${c.req.method} ${matchedRoute}`);
-            span.setAttribute("http.route", matchedRoute);
-          }
-
-          span.setAttribute(ATTR_HTTP_RESPONSE_STATUS_CODE, c.res.status);
-          if (c.res.status >= 400) {
-            span.setStatus({
-              code: SpanStatusCode.ERROR,
-              message: `HTTP ${c.res.status}`,
-            });
-          } else {
-            span.setStatus({ code: SpanStatusCode.OK });
-          }
-        } catch (error) {
-          span.recordException(error as Error);
-          span.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: (error as Error).message,
-          });
-          throw error;
-        } finally {
-          span.end();
-        }
-      },
-    );
-  });
-});
 
 app.post("/api/otel/v1/traces", async (c) => {
   if (!env.AXIOM_TOKEN || !env.AXIOM_DATASET) {
@@ -137,6 +61,23 @@ app.post("/api/otel/v1/traces", async (c) => {
   }
 });
 
+// OpenTelemetry Middleware - auto-traces all requests and injects user context
+app.use(httpInstrumentationMiddleware());
+
+// If you want to add User IDs or specific custom tags like you had before,
+// do it here. The span is already active from the middleware above.
+app.use("*", async (c, next) => {
+  // Example: Re-adding your Better Auth logic later
+  /*
+    const session = ...
+    if (session?.user) {
+        const span = trace.getSpan(context.active());
+        span?.setAttribute("user.id", session.user.id);
+    }
+    */
+  await next();
+});
+
 app.get("/api/hello", (c) => {
   return c.json({ message: "Hello from the Hono Server!" });
 });
@@ -171,6 +112,8 @@ app.get("/api/demo-trace", async (c) => {
       logger.info({ latency: 500 }, "External API call completed");
     },
   );
+
+  await fetch("https://jsonplaceholder.typicode.com/todos/1");
 
   logger.info("Demo trace completed");
 
