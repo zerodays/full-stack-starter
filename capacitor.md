@@ -280,8 +280,8 @@ const config: CapacitorConfig = {
 
 export default config;
 ```
-
-Then create a file and paste this into it:
+<details>
+<summary>Then create a file and paste this (click to expand)</summary>
 
 ```typescript
 import { env } from '@/env/client';
@@ -442,11 +442,166 @@ export function useAutoUpdater() {
   }, []);
 }
 ```
+</details>
+
+<br>
 
 The final thing to do is use this hook when the app starts. Go to `app.tsx` and add this right after `export default function App() {`:
 ```typescript
 useAutoUpdater();
 ```
+
+### Version guard
+
+<details>
+<summary>You should implement the version guard too. We will start by creating a hook that tells us the current app version:</summary>
+
+```typescript
+import { App as AppPlugin } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { useQuery } from '@tanstack/react-query';
+
+type AppVersionInfo = {
+  version: string | null;
+  build: string | null;
+  nativeVersion: string | null;
+  buildNumber: string | null;
+  bundleVersion: string | null;
+  platform: string;
+  isNative: boolean;
+};
+
+export const useAppVersion = () => {
+  return useQuery({
+    queryKey: ['app-version'],
+    queryFn: async (): Promise<AppVersionInfo> => {
+      const platform = Capacitor.getPlatform();
+      const isNative = Capacitor.isNativePlatform();
+
+      let version: string | null = null;
+      let build: string | null = null;
+
+      try {
+        const info = await AppPlugin.getInfo();
+        version = info.version ?? null;
+        build = info.build ?? null;
+      } catch (err) {
+        console.warn('[useAppVersion] App.getInfo failed', err);
+      }
+
+      let bundleVersion: string | null = null;
+      if (isNative) {
+        try {
+          const current = await CapacitorUpdater.current();
+          bundleVersion = current.bundle.version ?? null;
+        } catch (err) {
+          console.warn('[useAppVersion] CapacitorUpdater.current failed', err);
+        }
+      }
+
+      return {
+        version,
+        build,
+        nativeVersion: version,
+        buildNumber: build,
+        bundleVersion,
+        platform,
+        isNative,
+      };
+    },
+  });
+};
+```
+</details>
+<br>
+<details>
+<summary>Now you can create a new file that will be our actual version guard.</summary>
+
+```typescript
+import { useAppVersion } from '@/hooks/use-app-version';
+import { Capacitor } from '@capacitor/core';
+import { useMemo, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ArrowBigUpIcon } from './ui/arrow-big-up';
+import { Button } from './ui/button';
+
+const MIN_ANDROID_BUILD = 17;
+const MIN_IOS_BUILD = 13;
+
+// This is only for development purposes !!!
+// It should be always be false in production !!!
+const FORCE_VERSION_GUARD = false;
+
+interface VersionGuardProps {
+  children: ReactNode;
+}
+
+export function VersionGuard({ children }: VersionGuardProps) {
+  const { data: appInfo, isLoading, error } = useAppVersion();
+  const { t } = useTranslation();
+
+  const platform = Capacitor.getPlatform();
+  const minBuildNumber = platform === 'ios' ? MIN_IOS_BUILD : MIN_ANDROID_BUILD;
+  const appUrl = useMemo(() => {
+    if (platform === 'ios') {
+      return 'https://apps.apple.com/app/id6755144572';
+    }
+
+    // Default to Android Play Store
+    return 'https://play.google.com/store/apps/details?id=dev.zerodays.voicefill.medical';
+  }, [platform]);
+
+  if (platform === 'web' && !FORCE_VERSION_GUARD) {
+    return <>{children}</>;
+  }
+
+  // While loading, show children unless we're force enabling
+  if (isLoading && !FORCE_VERSION_GUARD) return null;
+
+  // If there's an error getting version, show children unless we force show
+  if ((error || !appInfo) && !FORCE_VERSION_GUARD) return <>{children}</>;
+
+  const buildValue = appInfo?.build ?? null;
+  const currentBuildNumber = buildValue ? Number(buildValue) : null;
+  const isBuildNumberValid =
+    typeof currentBuildNumber === 'number' &&
+    !Number.isNaN(currentBuildNumber) &&
+    currentBuildNumber >= minBuildNumber;
+
+  console.log('isBuildNumberValid', isBuildNumberValid);
+  console.log('buildValue', buildValue);
+  console.log('minBuildNumber', minBuildNumber);
+
+  if (FORCE_VERSION_GUARD || !isBuildNumberValid) {
+    const title = t('errors:versionGuard:updateRequired');
+    const message = t('errors:versionGuard:genericMessage');
+    return (
+      <div className="bg-background flex h-full w-full items-center justify-center px-4">
+        <div className="border-primary/10 shadow-primary/20 flex w-full max-w-md flex-col items-center gap-6 rounded-2xl border bg-white/90 p-8 text-center shadow-2xl backdrop-blur">
+          <div className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
+            <ArrowBigUpIcon className="mt-1" />
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-2xl font-semibold text-gray-900">{title}</h2>
+            <p className="text-sm leading-relaxed text-gray-600">{message}</p>
+          </div>
+          <Button
+            onClick={() => window.open(appUrl, '_blank')}
+            className="bg-primary hover:bg-primary/90 w-full text-white">
+            {t('errors:versionGuard:updateButton')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+```
+</details>
+
 
 ## Useful Resources
 
