@@ -602,6 +602,7 @@ export function VersionGuard({ children }: VersionGuardProps) {
 ```
 </details>
 
+---
 
 ## Useful Resources
 
