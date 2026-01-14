@@ -1,4 +1,6 @@
-# Capacitor
+<p align="center">
+  <img src="capacitor.svg" width="100%" alt="Capacitor Guide">
+</p>
 
 A comprehensive guide for adding [Capacitor](https://capacitorjs.com/) to this project to build native iOS and Android apps from your web codebase.
 
@@ -12,7 +14,7 @@ A comprehensive guide for adding [Capacitor](https://capacitorjs.com/) to this p
 4. [Development Workflow](#development-workflow)
 5. [Remote Console Logging](#remote-console-logging)
 6. [Building for Production](#building-for-production)
-7. [Troubleshooting](#troubleshooting)
+7. [Auto Updater (OTA Updates)](#auto-updater-ota-updates)
 8. [Useful Resources](#useful-resources)
 
 ---
@@ -242,6 +244,210 @@ This will:
 
 ---
 
+## Auto Updater (OTA Updates)
+
+Over-the-air (OTA) updates allow you to push updates directly to users without requiring app store submissions. This is useful for bug fixes, UI changes, and minor updates that don't require native code changes.
+
+📖 **Reference:** [Capgo Capacitor Updater](https://github.com/Cap-go/capacitor-updater)
+
+### Installation
+
+```bash
+bun add @capgo/capacitor-updater @capacitor/splash-screen
+bunx cap sync
+```
+
+>[!NOTE]
+>In infisical you should have `VITE_SITE_URL` variable set.
+
+### Configuration
+
+Add the plugin configuration to your `capacitor.config.ts`:
+
+```typescript
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'dev.zerodays.fullstackstarter',
+  appName: 'Full Stack Starter',
+  webDir: 'dist-static',
+  plugins: {
+    CapacitorUpdater: {
+      autoUpdate: false // we handle this manually
+    }
+  }
+};
+
+export default config;
+```
+
+Then create a file and paste this into it:
+
+```typescript
+import { env } from '@/env/client';
+import { App } from '@capacitor/app';
+import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { useEffect } from 'react';
+import z from 'zod';
+
+// Toggle to enable/disable auto-updates
+// Disabled on development
+const AUTO_UPDATE_ENABLED = import.meta.env.MODE !== 'development';
+
+// If version is 'builtin', we treat it as 0, so ANY update will apply. If it's
+// a timestamp string, we parse it.
+const internalVersionSchema = z.union([
+  z.literal('builtin').transform(() => 0),
+  z.coerce.number().int().nonnegative(),
+]);
+
+const remoteVersionResponseSchema = z.object({
+  version: z.coerce.number().int().nonnegative(),
+});
+
+const fetchRemoteVersion = async () => {
+  const versionUrl = new URL('/version.json', env.VITE_SITE_URL);
+  console.log('[AutoUpdate] Fetching version from:', versionUrl.toString());
+  const response = await fetch(versionUrl, {
+    cache: 'no-cache',
+  });
+
+  if (!response.ok) {
+    throw new Error('Could not fetch remote version');
+  }
+
+  const responseJson = await response.json();
+  const { version } = remoteVersionResponseSchema.parse(responseJson);
+
+  return version;
+};
+
+const fetchRemoteBundle = async (remoteVersion: string) => {
+  const bundleUrl = new URL('bundle.zip', env.VITE_SITE_URL);
+  console.log('[AutoUpdate] Fetching bundle from:', bundleUrl.toString());
+  return await CapacitorUpdater.download({
+    url: bundleUrl.toString(),
+    version: remoteVersion,
+  });
+};
+
+export function useAutoUpdater() {
+  useEffect(() => {
+    // Early return if auto-update is disabled
+    if (!AUTO_UPDATE_ENABLED) {
+      console.log('[AutoUpdate] Auto-update is disabled');
+      // Ensure splash screen hides if updates are disabled
+      SplashScreen.hide();
+      return;
+    }
+
+    // Immediately notify Capgo on mount to prevent rollback loops
+    CapacitorUpdater.notifyAppReady().catch((err) =>
+      console.warn('[AutoUpdate] notifyAppReady failed', err),
+    );
+
+    const platform = Capacitor.getPlatform();
+    console.log('[AutoUpdate] Hook mounted on platform:', platform);
+
+    // Web check
+    if (!Capacitor.isNativePlatform()) {
+      console.log('[AutoUpdate] Skipping, not a native platform');
+      return;
+    }
+
+    console.log('[AutoUpdate] Initializing auto-updater', env.VITE_SITE_URL);
+
+    let isMounted = true;
+    let isChecking = false;
+    let resumeHandle: PluginListenerHandle | undefined;
+
+    const checkAndApplyUpdate = async () => {
+      // Fetch Remote Version
+      try {
+        // Fetch the remote version and validate that the response JSON is
+        // valid.
+        const remoteVersion = await fetchRemoteVersion();
+        console.log('[AutoUpdate] Remote version:', remoteVersion);
+
+        // Get the current internal bundle version
+        let currentVersion = 0;
+        try {
+          const current = await CapacitorUpdater.current();
+          console.log(
+            '[AutoUpdate] Current Internal Bundle Version:',
+            current.bundle.version,
+          );
+          if (current.bundle.version) {
+            currentVersion = internalVersionSchema.parse(
+              current.bundle.version,
+            );
+          }
+        } catch (error) {
+          console.warn(
+            '[AutoUpdate] current() failed, assuming builtin',
+            error,
+          );
+        }
+        console.log('[AutoUpdate] Current version:', currentVersion);
+
+        if (remoteVersion > currentVersion) {
+          // Show Splash Screen to block UI while downloading
+          await SplashScreen.show({
+            autoHide: false,
+            fadeInDuration: 200,
+          });
+
+          console.log('[AutoUpdate] New update found! Downloading...');
+          const bundle = await fetchRemoteBundle(`${remoteVersion}`);
+          console.log('[AutoUpdate] Download complete, setting version...');
+          await CapacitorUpdater.set(bundle);
+          console.log('[AutoUpdate] Update set. App will update on reload.');
+        } else {
+          console.log('[AutoUpdate] App is up to date.');
+          // No update needed, allow user to see the app
+          await SplashScreen.hide();
+        }
+      } catch (error) {
+        console.error('[AutoUpdate] Failed', error);
+        // On error, ensure we don't lock the user out
+        await SplashScreen.hide();
+      }
+    };
+
+    const runUpdateFlow = async () => {
+      if (isChecking || !isMounted) return;
+      isChecking = true;
+      await checkAndApplyUpdate();
+      isChecking = false;
+    };
+
+    // Run on mount
+    void runUpdateFlow();
+
+    // Run on Resume
+    App.addListener('resume', runUpdateFlow).then((handle) => {
+      if (isMounted) {
+        resumeHandle = handle;
+      } else {
+        void handle.remove();
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      resumeHandle?.remove();
+    };
+  }, []);
+}
+```
+
+The final thing to do is use this hook when the app starts. Go to `app.tsx` and add this right after `export default function App() {`:
+```typescript
+useAutoUpdater();
+```
+
 ## Useful Resources
 
 ### Official Documentation
@@ -261,6 +467,7 @@ This will:
 
 | Plugin | Description | Link |
 |--------|-------------|------|
+| Capacitor Updater | OTA updates | https://github.com/Cap-go/capacitor-updater |
 | Camera | Take photos and videos | https://capacitorjs.com/docs/apis/camera |
 | Filesystem | Read/write files | https://capacitorjs.com/docs/apis/filesystem |
 | Geolocation | GPS coordinates | https://capacitorjs.com/docs/apis/geolocation |
@@ -285,7 +492,8 @@ This will:
 | `bun run cap:android` | Run Android app with live reload |
 | `bun run cap:ios:build` | Production build for iOS |
 | `bun run cap:android:build` | Production build for Android |
-| `bun run logs` | Start remote console log server |
+| `bun run cap:logs` | Start remote console log server |
+| `bun run cap:upload` | Build and upload OTA update to Capgo |
 
 ---
 
