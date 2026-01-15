@@ -4,7 +4,11 @@ import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch"; // 
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 // import { TraceIdRatioBasedSampler } from "@opentelemetry/sdk-trace-base";
-import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+import {
+  ATTR_SERVICE_NAME,
+  ATTR_SERVICE_VERSION,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+} from "@opentelemetry/semantic-conventions";
 import env from "@/env";
 
 if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
@@ -19,6 +23,8 @@ if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
   const sdk = new NodeSDK({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: env.OTEL_SERVICE_NAME,
+      [ATTR_SERVICE_VERSION]: env.SERVICE_VERSION,
+      [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: env.ENV,
     }),
     traceExporter: exporter,
     // Uncomment to enable sampling when traffic increases:

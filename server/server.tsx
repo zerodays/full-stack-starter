@@ -11,6 +11,8 @@ import { db } from "@/server/db";
 
 const { logger } = await import("@/server/logger");
 const { withSpan } = await import("@/server/tracing");
+const { requestContext } = await import("@/server/request-context");
+const { trace } = await import("@opentelemetry/api");
 
 // TODO: Uncomment when Better Auth is set up
 // import { auth } from "@/server/auth";
@@ -64,18 +66,28 @@ app.post("/api/otel/v1/traces", async (c) => {
 // OpenTelemetry Middleware - auto-traces all requests and injects user context
 app.use(httpInstrumentationMiddleware());
 
-// If you want to add User IDs or specific custom tags like you had before,
-// do it here. The span is already active from the middleware above.
+// User context middleware - injects user info into traces and logs
+// TODO: Uncomment auth logic when Better Auth is set up
 app.use("*", async (c, next) => {
-  // Example: Re-adding your Better Auth logic later
-  /*
-    const session = ...
-    if (session?.user) {
-        const span = trace.getSpan(context.active());
-        span?.setAttribute("user.id", session.user.id);
-    }
-    */
-  await next();
+  // const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = null as { user: { id: string; email: string } } | null; // Remove this line when auth is ready
+
+  if (session?.user) {
+    // Add to span for tracing
+    const span = trace.getActiveSpan();
+    span?.setAttribute("user.id", session.user.id);
+    span?.setAttribute("user.email", session.user.email);
+
+    // Run with user context for logging
+    await requestContext.run(
+      { userId: session.user.id, userEmail: session.user.email },
+      async () => {
+        await next();
+      },
+    );
+  } else {
+    await next();
+  }
 });
 
 app.get("/api/hello", (c) => {

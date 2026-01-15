@@ -7,7 +7,11 @@ import { XMLHttpRequestInstrumentation } from "@opentelemetry/instrumentation-xm
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { WebTracerProvider } from "@opentelemetry/sdk-trace-web";
-import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+import {
+  ATTR_SERVICE_NAME,
+  ATTR_SERVICE_VERSION,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+} from "@opentelemetry/semantic-conventions";
 
 export function initInstrumentation() {
   if (typeof window === "undefined") return;
@@ -19,6 +23,8 @@ export function initInstrumentation() {
   const provider = new WebTracerProvider({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: "web",
+      [ATTR_SERVICE_VERSION]: import.meta.env.VITE_SERVICE_VERSION || "dev",
+      [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: import.meta.env.MODE,
     }),
     spanProcessors: [new BatchSpanProcessor(exporter)],
   });

@@ -11,10 +11,10 @@ This app uses OpenTelemetry to trace requests from browser to database. Traces a
 | Layer | What's traced |
 |-------|--------------|
 | Frontend | Page loads, all `fetch()` and XHR (axios) calls |
-| Backend | All HTTP requests, PostgreSQL queries |
+| Backend | All incoming HTTP requests, outgoing `fetch()` calls, PostgreSQL queries |
 | Cross-service | Trace context propagation via `traceparent` header |
 
-**You don't need to add any tracing code for basic visibility.** The middleware and auto-instrumentation handle it.
+**You don't need to add any tracing code for basic visibility.** The `@hono/otel` middleware and auto-instrumentation handle it.
 
 ---
 
@@ -144,9 +144,9 @@ try {
 
 ---
 
-## Logging with trace context
+## Logging with trace and user context
 
-Use the trace-aware logger to automatically include `traceId` and `spanId` in every log entry:
+Use the logger to automatically include `traceId`, `spanId`, and user info in every log entry:
 
 ```typescript
 import { logger } from "@/server/logger";
@@ -155,18 +155,22 @@ import { logger } from "@/server/logger";
 logger.info("User logged in");
 
 // With structured data
-logger.info({ userId: 123, plan: "pro" }, "User logged in");
+logger.info({ plan: "pro" }, "User upgraded");
 
 // Log levels: trace, debug, info, warn, error, fatal
 logger.error({ err: error }, "Payment failed");
 ```
 
-**Output when inside a traced request:**
+**Output when inside an authenticated, traced request:**
 ```json
-{"level":30,"traceId":"abc123...","spanId":"def456...","userId":123,"msg":"User logged in"}
+{"level":30,"traceId":"abc123...","spanId":"def456...","userId":"user_123","userEmail":"user@example.com","msg":"User upgraded"}
 ```
 
-This lets you search logs by trace ID in your logging platform and correlate with Axiom traces.
+Context is injected automatically:
+- `traceId`/`spanId` - from active OpenTelemetry span
+- `userId`/`userEmail` - from authenticated session (via request context middleware)
+
+This lets you search logs by trace ID or user ID in your logging platform.
 
 **Note:** Logs go to stdout, not Axiom. Your hosting platform captures them. Use `LOG_LEVEL` env var to control verbosity (default: `info`).
 

@@ -12,6 +12,8 @@ const env = createEnv({
     AXIOM_TOKEN: z.string().min(1).optional(),
     AXIOM_DATASET: z.string().min(1).optional(),
     OTEL_SERVICE_NAME: z.string().default("server"),
+    // Set via CI/CD: SERVICE_VERSION=$(git rev-parse --short HEAD)
+    SERVICE_VERSION: z.string().default("dev"),
   },
 
   // TODO: client secrets
@@ -26,6 +28,7 @@ const env = createEnv({
     AXIOM_TOKEN: Bun.env.AXIOM_TOKEN,
     AXIOM_DATASET: Bun.env.AXIOM_DATASET,
     OTEL_SERVICE_NAME: Bun.env.OTEL_SERVICE_NAME,
+    SERVICE_VERSION: Bun.env.SERVICE_VERSION,
   },
 });
 export default env;

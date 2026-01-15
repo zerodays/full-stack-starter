@@ -1,14 +1,14 @@
 import type { RouteRecord } from "vite-react-ssg";
 import App from "./app";
+import { ErrorBoundary } from "./components/error-boundary";
 
 export const routes: RouteRecord[] = [
   {
     path: "/",
-    Component: App,
-    errorElement: (
-      <div className="flex h-screen w-screen items-center justify-center font-black text-4xl text-red-500">
-        Error
-      </div>
+    element: (
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     ),
   },
 ];

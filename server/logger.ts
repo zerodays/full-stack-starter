@@ -1,31 +1,43 @@
 import { trace } from "@opentelemetry/api";
 import pino from "pino";
+import { requestContext } from "./request-context";
 
 /**
- * Trace-aware Pino logger.
+ * Trace and user-aware Pino logger.
  *
- * Automatically injects traceId and spanId into every log entry
- * when called within an active span. This allows correlating logs
- * with traces in your observability platform.
+ * Automatically injects into every log entry:
+ * - traceId/spanId when inside an active span
+ * - userId/userEmail when inside an authenticated request
  *
  * Usage:
  *   import { logger } from "@/server/logger";
- *   logger.info({ userId: 123 }, "User logged in");
+ *   logger.info("User clicked checkout");
  *
- * Output includes traceId/spanId when inside a traced request:
- *   {"level":30,"traceId":"abc123...","spanId":"def456...","userId":123,"msg":"User logged in"}
+ * Output (authenticated request with active span):
+ *   {"level":30,"traceId":"abc...","spanId":"def...","userId":"123","userEmail":"user@example.com","msg":"User clicked checkout"}
  */
 export const logger = pino({
   level: process.env.LOG_LEVEL || "info",
   mixin() {
+    const result: Record<string, string> = {};
+
+    // Add trace context
     const span = trace.getActiveSpan();
     if (span) {
-      const ctx = span.spanContext();
-      return {
-        traceId: ctx.traceId,
-        spanId: ctx.spanId,
-      };
+      const spanCtx = span.spanContext();
+      result.traceId = spanCtx.traceId;
+      result.spanId = spanCtx.spanId;
     }
-    return {};
+
+    // Add user context
+    const reqCtx = requestContext.getStore();
+    if (reqCtx?.userId) {
+      result.userId = reqCtx.userId;
+    }
+    if (reqCtx?.userEmail) {
+      result.userEmail = reqCtx.userEmail;
+    }
+
+    return result;
   },
 });
