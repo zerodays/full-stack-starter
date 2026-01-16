@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/bun";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import env from "@/env";
+import { authFeature } from "@/server/features/auth";
 import { demo } from "@/server/features/demo";
 import { health } from "@/server/features/health";
 import { otel } from "@/server/features/otel";
@@ -18,7 +19,10 @@ Sentry.init({
 });
 
 // API routes that will be traced and exposed via RPC
-const api = new Hono().route("/health", health).route("/", demo);
+const api = new Hono()
+  .route("/auth", authFeature)
+  .route("/health", health)
+  .route("/", demo);
 
 const app = new Hono()
   // OTel proxy must be BEFORE tracing middleware (avoids recursive tracing)

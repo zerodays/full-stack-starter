@@ -2,7 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { db } from "@/server/db";
+import { db } from "@/server/database";
 import { logger } from "@/server/logger";
 import { withSpan } from "@/server/tracing";
 

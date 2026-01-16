@@ -71,27 +71,54 @@ This command starts:
 | `bun run db:start` | Start PostgreSQL container |
 | `bun run db:studio` | Open Drizzle Studio |
 | `bun run db:reset` | Reset database (destroys all data) |
+| `bun run db:generate` | Generate migrations from schema changes |
+| `bun run db:migrate` | Apply pending migrations |
+| `bun run db:regenerate-auth` | Regenerate Better Auth schema |
 | `bun run import:staging` | Import data from staging |
+
+Re-run `db:regenerate-auth` when:
+- Adding Better Auth plugins (OAuth, 2FA, organizations, etc.)
+- Upgrading Better Auth with schema changes
+
+**Note:** The schema is split into two files:
+- `server/database/schema/auth.ts` - Auto-generated (safe to overwrite)
+- `server/database/schema/app.ts` - Your custom tables (never overwritten)
 
 ## Project Structure
 
 ```
-├── web/                 # Frontend (React)
-│   ├── app.tsx          # Main app component
-│   ├── client.tsx       # Client entry point
-│   ├── router.tsx       # Route definitions
-│   ├── components/      # UI components
-│   ├── i18n/            # Internationalization
-│   └── styles.css       # Global styles
-├── server/              # Backend (Hono)
-│   ├── server.tsx       # Server entry point
-│   ├── logger.ts        # Pino logger with trace context
-│   └── db/              # Database schema & config
-├── lib/                 # Shared utilities
-│   └── tracing.ts       # OpenTelemetry helpers
-├── docs/                # Documentation
-├── scripts/             # Utility scripts
-└── env.ts               # Environment schema (Zod)
+├── web/                     # Frontend (React)
+│   ├── app.tsx              # Main app component
+│   ├── client.tsx           # Client entry point
+│   ├── router.tsx           # Route definitions
+│   ├── components/          # UI components
+│   ├── lib/
+│   │   ├── api.ts           # Hono RPC client (type-safe API calls)
+│   │   └── auth-client.ts   # Better Auth client
+│   ├── i18n/                # Internationalization
+│   └── styles.css           # Global styles
+├── server/                  # Backend (Hono)
+│   ├── server.tsx           # Server entry point & route assembly
+│   ├── auth.ts              # Better Auth configuration
+│   ├── logger.ts            # Pino logger with trace context
+│   ├── middleware/          # Global middleware
+│   │   └── auth.ts          # User context middleware
+│   ├── features/            # Feature modules
+│   │   ├── auth/            # Auth routes (Better Auth handler)
+│   │   ├── health/          # Health check
+│   │   └── demo/            # Demo routes
+│   │       └── routes/      # Route handlers (one file per route)
+│   └── database/
+│       ├── index.ts         # Drizzle connection
+│       └── schema/
+│           ├── auth.ts      # Better Auth tables (auto-generated)
+│           ├── app.ts       # Your custom tables
+│           └── index.ts     # Re-exports all tables
+├── lib/                     # Shared utilities
+│   └── tracing.ts           # OpenTelemetry helpers
+├── docs/                    # Documentation
+├── scripts/                 # Utility scripts
+└── env.ts                   # Environment schema (Zod)
 ```
 
 ## CI
@@ -113,7 +140,8 @@ GitHub Actions runs on every push and PR to `master`:
 
 ## TODO
 
-- [ ] RPC type safety (tRPC or Hono RPC)
+- [x] RPC type safety (Hono RPC)
+- [x] Better Auth integration
 - [ ] DB sync from staging (implement `scripts/import-staging.sh`)
 - [ ] Sentry frontend integration
 - [ ] Capacitor setup (docs exist, not installed)
