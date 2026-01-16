@@ -110,3 +110,10 @@ GitHub Actions runs on every push and PR to `master`:
 | [OpenTelemetry Guide](./docs/otel-guide.md) | How to add tracing to your code |
 | [OpenTelemetry Architecture](./docs/otel-architecture.md) | Why the setup is structured this way |
 | [Capacitor Guide](./docs/capacitor.md) | Building native iOS/Android apps |
+
+## TODO
+
+- [ ] RPC type safety (tRPC or Hono RPC)
+- [ ] DB sync from staging (implement `scripts/import-staging.sh`)
+- [ ] Sentry frontend integration
+- [ ] Capacitor setup (docs exist, not installed)
