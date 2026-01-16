@@ -14,10 +14,11 @@
     "start": "NODE_ENV=production PORT=8080 bun run dist-server/_worker.js",
     "import:staging": "bash scripts/import-staging.sh",
     "typecheck": "tsc --noEmit && tsc --noEmit -p server/tsconfig.json && tsc --noEmit -p web/tsconfig.json",
-    "lint": "biome check . && bun run check-locale",
-    "lint:fix": "biome check . --write",
-    "format": "biome format .",
-    "format:fix": "biome format . --write",
+    "all": "bun run format && bun run lint && bun run typecheck && bun run build",
+    "lint": "biome check . --write && bun run check-locale",
+    "lint:check": "biome check . && bun run check-locale",
+    "format": "biome format . --write",
+    "format:check": "biome format .",
     "check-locale": "bun run scripts/check-locale.ts"
   },
   "devDependencies": {

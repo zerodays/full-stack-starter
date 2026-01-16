@@ -57,10 +57,12 @@ This command starts:
 | `bun dev` | Start full development environment |
 | `bun run build` | Build for production |
 | `bun start` | Run production server |
-| `bun run lint` | Check code with Biome |
-| `bun run lint:fix` | Fix linting issues |
-| `bun run format` | Check formatting |
-| `bun run format:fix` | Fix formatting issues |
+| `bun run all` | Run all CI checks locally |
+| `bun run typecheck` | Type-check the entire project |
+| `bun run lint` | Fix linting issues |
+| `bun run lint:check` | Check code with Biome |
+| `bun run format` | Fix formatting issues |
+| `bun run format:check` | Check formatting |
 
 ### Database
 
@@ -91,6 +93,15 @@ This command starts:
 ├── scripts/             # Utility scripts
 └── env.ts               # Environment schema (Zod)
 ```
+
+## CI
+
+GitHub Actions runs on every push and PR to `master`:
+
+- Format check
+- Lint
+- Type check
+- Build
 
 ## Documentation
 
