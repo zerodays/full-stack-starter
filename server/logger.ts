@@ -1,5 +1,6 @@
 import { trace } from "@opentelemetry/api";
 import pino from "pino";
+import env from "@/env";
 import { requestContext } from "./request-context";
 
 /**
@@ -17,7 +18,7 @@ import { requestContext } from "./request-context";
  *   {"level":30,"traceId":"abc...","spanId":"def...","userId":"123","userEmail":"user@example.com","msg":"User clicked checkout"}
  */
 export const logger = pino({
-  level: process.env.LOG_LEVEL || "info",
+  level: env.LOG_LEVEL || "info",
   mixin() {
     const result: Record<string, string> = {};
 

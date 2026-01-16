@@ -48,7 +48,7 @@ app.post("/api/otel/v1/traces", async (c) => {
 
     if (!response.ok) {
       const text = await response.text();
-      console.error("Axiom error:", text);
+      logger.error({ upstreamError: text }, "Axiom error:");
       return c.json(
         { error: "Upstream error", details: text },
         // biome-ignore lint/suspicious/noExplicitAny: response.status is compatible
@@ -58,7 +58,7 @@ app.post("/api/otel/v1/traces", async (c) => {
 
     return c.json({ success: true });
   } catch (e) {
-    console.error("Proxy error:", e);
+    logger.error({ error: e }, "Proxy error:");
     return c.json({ error: "Proxy error" }, 500);
   }
 });
@@ -135,7 +135,7 @@ app.get("/api/demo-trace", async (c) => {
   });
 });
 
-const isProd = process.env.NODE_ENV === "production";
+const isProd = env.ENV === "production";
 
 if (isProd) {
   // Serve pre-built static files from dist-static directory.

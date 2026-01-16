@@ -10,8 +10,8 @@ import { WebTracerProvider } from "@opentelemetry/sdk-trace-web";
 import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
-  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
 } from "@opentelemetry/semantic-conventions";
+import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from "@opentelemetry/semantic-conventions/incubating";
 
 export function initInstrumentation() {
   if (typeof window === "undefined") return;
@@ -24,7 +24,7 @@ export function initInstrumentation() {
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: "web",
       [ATTR_SERVICE_VERSION]: import.meta.env.VITE_SERVICE_VERSION || "dev",
-      [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: import.meta.env.MODE,
+      [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: import.meta.env.MODE,
     }),
     spanProcessors: [new BatchSpanProcessor(exporter)],
   });
@@ -47,5 +47,7 @@ export function initInstrumentation() {
     ],
   });
 
-  console.log("Web instrumentation initialized");
+  if (import.meta?.env?.DEV) {
+    console.debug("Web instrumentation initialized");
+  }
 }

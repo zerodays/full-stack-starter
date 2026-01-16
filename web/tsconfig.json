@@ -1,12 +1,14 @@
 {
   "extends": "../tsconfig.json",
+  "include": ["./**/*.tsx", "./**/*.ts"],
+  "exclude": [],
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "baseUrl": ".",
     "paths": {
+      "@/*": ["../*"],
       "~/*": ["./*"]
     }
-  },
-  "include": ["./**/*.tsx", "./**/*.ts"]
+  }
 }

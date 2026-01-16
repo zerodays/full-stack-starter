@@ -1,14 +1,14 @@
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
-import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch"; // <--- IMPORT THIS
+import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 // import { TraceIdRatioBasedSampler } from "@opentelemetry/sdk-trace-base";
 import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
-  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
 } from "@opentelemetry/semantic-conventions";
+import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from "@opentelemetry/semantic-conventions/incubating";
 import env from "@/env";
 
 if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
@@ -24,7 +24,7 @@ if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: env.OTEL_SERVICE_NAME,
       [ATTR_SERVICE_VERSION]: env.SERVICE_VERSION,
-      [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: env.ENV,
+      [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: env.ENV,
     }),
     traceExporter: exporter,
     // Uncomment to enable sampling when traffic increases:
@@ -50,7 +50,7 @@ if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
 
     // Graceful shutdown to flush pending traces (production only)
     // In dev mode, concurrently handles process management
-    if (process.env.NODE_ENV === "production") {
+    if (env.ENV === "production") {
       const shutdown = () => {
         sdk
           .shutdown()
@@ -60,8 +60,8 @@ if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
           )
           .finally(() => process.exit(0));
 
-        // Force exit after 2s if shutdown hangs
-        setTimeout(() => process.exit(0), 2000);
+        // Force exit after 5s if shutdown hangs
+        setTimeout(() => process.exit(0), 5000);
       };
 
       process.on("SIGTERM", shutdown);

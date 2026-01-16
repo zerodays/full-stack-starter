@@ -5,6 +5,7 @@ const env = createEnv({
   server: {
     APP_NAME: z.string().min(1),
     ENV: z.enum(["development", "staging", "production"]),
+    LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
     SENTRY_DSN: z.string().url().optional(),
     DATABASE_URL: z.string().url(),
     BETTER_AUTH_SECRET: z.string().min(1),
@@ -21,6 +22,7 @@ const env = createEnv({
   runtimeEnvStrict: {
     APP_NAME: Bun.env.APP_NAME,
     ENV: Bun.env.ENV,
+    LOG_LEVEL: Bun.env.LOG_LEVEL,
     SENTRY_DSN: Bun.env.SENTRY_DSN,
     DATABASE_URL: Bun.env.DATABASE_URL,
     BETTER_AUTH_SECRET: Bun.env.BETTER_AUTH_SECRET,

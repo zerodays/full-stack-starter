@@ -2,6 +2,8 @@ import { type Span, SpanStatusCode, trace } from "@opentelemetry/api";
 
 type SpanFn<T> = (span: Span) => Promise<T> | T;
 
+type SpanAttributes = Record<string, string | number | boolean>;
+
 /**
  * Creates a withSpan function bound to a specific tracer.
  *
@@ -15,21 +17,32 @@ type SpanFn<T> = (span: Span) => Promise<T> | T;
 export function createWithSpan(tracerName: string) {
   const tracer = trace.getTracer(tracerName);
 
-  return async function withSpan<T>(
+  // Overload: withSpan(name, fn)
+  async function withSpan<T>(name: string, fn: SpanFn<T>): Promise<T>;
+  // Overload: withSpan(name, attrs, fn)
+  async function withSpan<T>(
     name: string,
-    fnOrAttrs: SpanFn<T> | Record<string, string | number | boolean>,
+    attrs: SpanAttributes,
+    fn: SpanFn<T>,
+  ): Promise<T>;
+  // Implementation
+  async function withSpan<T>(
+    name: string,
+    fnOrAttrs: SpanFn<T> | SpanAttributes,
     maybeFn?: SpanFn<T>,
   ): Promise<T> {
     const hasAttrs = typeof fnOrAttrs !== "function";
     const attrs = hasAttrs ? fnOrAttrs : undefined;
-    const fn = hasAttrs ? (maybeFn as SpanFn<T>) : fnOrAttrs;
+    const fn = hasAttrs ? maybeFn : fnOrAttrs;
+
+    if (!fn) {
+      throw new Error("withSpan requires a function argument");
+    }
 
     return tracer.startActiveSpan(name, async (span) => {
       try {
         if (attrs) {
-          for (const [key, value] of Object.entries(attrs)) {
-            span.setAttribute(key, value);
-          }
+          span.setAttributes(attrs);
         }
 
         const result = await fn(span);
@@ -46,7 +59,9 @@ export function createWithSpan(tracerName: string) {
         span.end();
       }
     });
-  };
+  }
+
+  return withSpan;
 }
 
 /**
@@ -56,14 +71,10 @@ export function createWithSpan(tracerName: string) {
  * @example
  * addSpanAttributes({ "project.id": project.id, "project.plan": project.plan });
  */
-export function addSpanAttributes(
-  attrs: Record<string, string | number | boolean>,
-): void {
+export function addSpanAttributes(attrs: SpanAttributes): void {
   const span = trace.getActiveSpan();
   if (span) {
-    for (const [key, value] of Object.entries(attrs)) {
-      span.setAttribute(key, value);
-    }
+    span.setAttributes(attrs);
   }
 }
 
