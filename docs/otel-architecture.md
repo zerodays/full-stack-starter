@@ -2,7 +2,7 @@
 
 This document covers how OpenTelemetry is set up in this repo, why certain decisions were made, and what's left to do.
 
-For practical "how to add tracing" examples, see [OTEL_GUIDE.md](./OTEL_GUIDE.md).
+For practical "how to add tracing" examples, see [otel-guide.md](./otel-guide.md).
 
 ---
 
@@ -90,13 +90,13 @@ We've disabled biome's import organizer for this file to preserve the order.
 
 | File | Purpose |
 |------|---------|
+| `lib/tracing.ts` | Shared tracing utilities: `createWithSpan`, `addSpanAttributes`, `recordSpanError` |
 | `web/instrumentation.ts` | Browser SDK setup (WebTracerProvider, fetch/XHR/document-load auto-instrumentation) |
-| `web/tracing.ts` | Frontend helpers: `withSpan`, `addSpanAttributes`, `recordSpanError` |
-| `web/components/error-boundary.tsx` | React ErrorBoundary that captures crashes as OTel spans |
+| `web/tracing.ts` | Frontend tracing (re-exports shared utils with "web" tracer) |
 | `web/client.tsx` | Calls `initInstrumentation()` before app loads |
 | `server/instrumentation.ts` | Node SDK setup (auto-instrumentations, Axiom exporter) |
 | `server/server.tsx` | Hono app with @hono/otel middleware + trace proxy endpoint |
-| `server/tracing.ts` | Backend helpers: `withSpan`, `addSpanAttributes`, `recordSpanError` |
+| `server/tracing.ts` | Backend tracing (re-exports shared utils with "server" tracer) |
 | `server/request-context.ts` | AsyncLocalStorage for request-scoped user context |
 | `server/logger.ts` | Trace and user-aware Pino logger (auto-injects traceId/spanId/userId) |
 | `env.ts` | OTEL config schema (AXIOM_TOKEN, AXIOM_DATASET, OTEL_SERVICE_NAME, SERVICE_VERSION) |
