@@ -5,11 +5,13 @@ const env = createEnv({
   server: {
     APP_NAME: z.string().min(1),
     ENV: z.enum(["development", "staging", "production"]),
-    LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
-    SENTRY_DSN: z.string().url().optional(),
-    DATABASE_URL: z.string().url(),
+    LOG_LEVEL: z
+      .enum(["trace", "debug", "info", "warn", "error", "fatal"])
+      .default("info"),
+    SENTRY_DSN: z.url().optional(),
+    DATABASE_URL: z.url(),
     BETTER_AUTH_SECRET: z.string().min(1),
-    BETTER_AUTH_URL: z.string().url(),
+    BETTER_AUTH_URL: z.url(),
     AXIOM_TOKEN: z.string().min(1).optional(),
     AXIOM_DATASET: z.string().min(1).optional(),
     OTEL_SERVICE_NAME: z.string().default("server"),

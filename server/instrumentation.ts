@@ -70,4 +70,8 @@ if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
   } catch (e) {
     console.error("Error initializing OpenTelemetry", e);
   }
+} else if (env.ENV === "production") {
+  console.warn(
+    "OpenTelemetry not initialized: AXIOM_TOKEN and AXIOM_DATASET are required",
+  );
 }
