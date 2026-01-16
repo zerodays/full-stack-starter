@@ -12,6 +12,12 @@ import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from "@opentelemetry/semantic-conven
 import env from "@/env";
 
 if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
+  // Only propagate trace headers to our own domain to avoid leaking context to third parties
+  const appHost = new URL(env.BETTER_AUTH_URL).host;
+  const internalDomainsPattern = new RegExp(
+    `^https?://${appHost.replace(/\./g, "\\.")}`,
+  );
+
   const exporter = new OTLPTraceExporter({
     url: "https://api.axiom.co/v1/traces",
     headers: {
@@ -39,7 +45,7 @@ if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
       }),
       new FetchInstrumentation({
         ignoreNetworkEvents: true,
-        propagateTraceHeaderCorsUrls: [/.+/], // Propagate headers to all domains (or restrict to your internal APIs)
+        propagateTraceHeaderCorsUrls: [internalDomainsPattern],
       }),
     ],
   });
@@ -52,16 +58,22 @@ if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
     // In dev mode, concurrently handles process management
     if (env.ENV === "production") {
       const shutdown = () => {
+        // Force exit after 5s if shutdown hangs
+        const forceExitTimeout = setTimeout(() => {
+          console.error("OpenTelemetry SDK shutdown timed out, forcing exit");
+          process.exit(1);
+        }, 5000);
+
         sdk
           .shutdown()
           .then(() => console.log("OpenTelemetry SDK shut down"))
           .catch((e) =>
             console.error("Error shutting down OpenTelemetry SDK", e),
           )
-          .finally(() => process.exit(0));
-
-        // Force exit after 5s if shutdown hangs
-        setTimeout(() => process.exit(0), 5000);
+          .finally(() => {
+            clearTimeout(forceExitTimeout);
+            process.exit(0);
+          });
       };
 
       process.on("SIGTERM", shutdown);

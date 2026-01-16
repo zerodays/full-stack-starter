@@ -16,6 +16,11 @@ import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from "@opentelemetry/semantic-conven
 export function initInstrumentation() {
   if (typeof window === "undefined") return;
 
+  // Only propagate trace headers to same-origin requests to avoid leaking context to third parties
+  const sameOriginPattern = new RegExp(
+    `^${window.location.origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`,
+  );
+
   const exporter = new OTLPTraceExporter({
     url: "/api/otel/v1/traces",
   });
@@ -38,11 +43,11 @@ export function initInstrumentation() {
       new DocumentLoadInstrumentation(),
       new FetchInstrumentation({
         ignoreUrls: [/.*\/api\/otel\/.*/],
-        propagateTraceHeaderCorsUrls: [/.+/],
+        propagateTraceHeaderCorsUrls: [sameOriginPattern],
       }),
       new XMLHttpRequestInstrumentation({
         ignoreUrls: [/.*\/api\/otel\/.*/],
-        propagateTraceHeaderCorsUrls: [/.+/],
+        propagateTraceHeaderCorsUrls: [sameOriginPattern],
       }),
     ],
   });

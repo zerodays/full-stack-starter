@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/bun";
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import env from "@/env.ts";
 import { db } from "@/server/db";
 
@@ -51,8 +52,7 @@ app.post("/api/otel/v1/traces", async (c) => {
       logger.error({ upstreamError: text }, "Axiom error:");
       return c.json(
         { error: "Upstream error", details: text },
-        // biome-ignore lint/suspicious/noExplicitAny: response.status is compatible
-        response.status as any,
+        response.status as ContentfulStatusCode,
       );
     }
 
