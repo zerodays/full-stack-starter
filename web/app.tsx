@@ -1,34 +1,29 @@
-import { useEffect, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { AuthDemo } from "~/components/auth-demo";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import i18n from "./i18n/i18n";
+import { api } from "./lib/api";
 import { withSpan } from "./tracing";
 
 export default function App() {
   const { t } = useTranslation("common");
+  const [name, setName] = useState("");
 
-  const [msg, setMsg] = useState("Loading...");
+  const demoTraceOptions = api["demo-trace"].$get.mutationOptions({});
+  const demoTrace = useMutation({
+    ...demoTraceOptions,
+    mutationFn: (args: Parameters<typeof demoTraceOptions.mutationFn>[0]) =>
+      withSpan("ui.click.demo_trace", { component: "App" }, () =>
+        demoTraceOptions.mutationFn(args),
+      ),
+  });
 
-  useEffect(() => {
-    fetch("/api/hello")
-      .then((res) => res.json())
-      .then((data) => setMsg(data.message));
-  }, []);
-
-  const triggerTrace = async () => {
-    setMsg("Starting trace...");
-
-    await withSpan(
-      "ui.click.demo_button",
-      { component: "App", event: "click" },
-      async () => {
-        const res = await fetch("/api/demo-trace");
-        const data = await res.json();
-        setMsg(data.message);
-      },
-    );
-  };
+  const msg = demoTrace.isPending
+    ? "Loading..."
+    : (demoTrace.data?.message ?? t("enterName"));
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-8">
@@ -59,15 +54,29 @@ export default function App() {
           components={{ strong: <strong /> }}
         />
       </p>
+      <div className="flex gap-2">
+        <Input
+          placeholder={t("namePlaceholder")}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) =>
+            e.key === "Enter" && name && demoTrace.mutate({ query: { name } })
+          }
+        />
+        <Button
+          onClick={() => demoTrace.mutate({ query: { name } })}
+          disabled={!name}
+        >
+          {t("sayHello")}
+        </Button>
+      </div>
       <Button
+        variant="outline"
         onClick={() =>
           i18n.changeLanguage(i18n.language === "en" ? "sl" : "en")
         }
       >
-        {t("testMe")}
-      </Button>
-      <Button variant="outline" onClick={triggerTrace}>
-        Trigger OpenTelemetry Trace
+        {t("switchLang")}
       </Button>
       <AuthDemo />
     </div>

@@ -7,6 +7,7 @@ import { logger } from "@/server/logger";
 import { withSpan } from "@/server/tracing";
 
 const querySchema = z.object({
+  name: z.string().min(1).optional(),
   delay: z.coerce.number().min(0).max(5000).optional().default(500),
   skipDb: z.coerce.boolean().optional().default(false),
 });
@@ -15,9 +16,9 @@ export const demoTraceRoute = new Hono().get(
   "/",
   zValidator("query", querySchema),
   async (c) => {
-    const { delay, skipDb } = c.req.valid("query");
+    const { name, delay, skipDb } = c.req.valid("query");
 
-    logger.info({ delay, skipDb }, "Demo trace started");
+    logger.info({ name, delay, skipDb }, "Demo trace started");
 
     if (!skipDb) {
       // This DB query is auto-traced by @opentelemetry/instrumentation-pg
@@ -53,10 +54,9 @@ export const demoTraceRoute = new Hono().get(
 
     logger.info("Demo trace completed");
 
+    const greeting = name ? `Hello, ${name}!` : "Hello!";
     return c.json({
-      message: "Trace complete! Check Axiom for the demo trace.",
-      timestamp: new Date().toISOString(),
-      params: { delay, skipDb },
+      message: greeting,
     });
   },
 );
