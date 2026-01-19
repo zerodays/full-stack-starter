@@ -56,3 +56,7 @@ export function initInstrumentation() {
     console.debug("Web instrumentation initialized");
   }
 }
+
+// Auto-initialize at module load time - this MUST run before any other modules
+// that use fetch are imported (like better-auth)
+initInstrumentation();

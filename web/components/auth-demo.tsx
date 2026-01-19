@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { signIn, signOut, signUp, useSession } from "~/lib/auth-client";
+import { withSpan } from "~/tracing";
 
 export function AuthDemo() {
   const { data: session, isPending } = useSession();
@@ -10,41 +11,44 @@ export function AuthDemo() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSignUp = async () => {
-    setError(null);
-    setStatus("Signing up...");
+  const handleSignUp = () =>
+    withSpan("auth.sign_up", { component: "AuthDemo" }, async () => {
+      setError(null);
+      setStatus("Signing up...");
 
-    const result = await signUp.email({ email, password, name });
+      const result = await signUp.email({ email, password, name });
 
-    if (result.error) {
-      setError(result.error.message ?? "Signup failed");
-      setStatus(null);
-    } else {
-      setStatus("Signed up successfully!");
-    }
-  };
+      if (result.error) {
+        setError(result.error.message ?? "Signup failed");
+        setStatus(null);
+      } else {
+        setStatus("Signed up successfully!");
+      }
+    });
 
-  const handleSignIn = async () => {
-    setError(null);
-    setStatus("Signing in...");
+  const handleSignIn = () =>
+    withSpan("auth.sign_in", { component: "AuthDemo" }, async () => {
+      setError(null);
+      setStatus("Signing in...");
 
-    const result = await signIn.email({ email, password });
+      const result = await signIn.email({ email, password });
 
-    if (result.error) {
-      setError(result.error.message ?? "Sign in failed");
-      setStatus(null);
-    } else {
-      setStatus("Signed in successfully!");
-    }
-  };
+      if (result.error) {
+        setError(result.error.message ?? "Sign in failed");
+        setStatus(null);
+      } else {
+        setStatus("Signed in successfully!");
+      }
+    });
 
-  const handleSignOut = async () => {
-    setError(null);
-    setStatus("Signing out...");
+  const handleSignOut = () =>
+    withSpan("auth.sign_out", { component: "AuthDemo" }, async () => {
+      setError(null);
+      setStatus("Signing out...");
 
-    await signOut();
-    setStatus("Signed out successfully!");
-  };
+      await signOut();
+      setStatus("Signed out successfully!");
+    });
 
   if (isPending) {
     return <div className="text-muted-foreground">Loading session...</div>;

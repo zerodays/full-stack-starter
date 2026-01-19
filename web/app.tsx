@@ -10,7 +10,7 @@ import { withSpan } from "./tracing";
 
 export default function App() {
   const { t } = useTranslation("common");
-  const [name, setName] = useState("");
+  const [name, setName] = useState("World");
 
   const demoTraceOptions = api["demo-trace"].$get.mutationOptions({});
   const demoTrace = useMutation({
@@ -60,14 +60,18 @@ export default function App() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) =>
-            e.key === "Enter" && name && demoTrace.mutate({ query: { name } })
+            e.key === "Enter" &&
+            name &&
+            !demoTrace.isPending &&
+            demoTrace.mutate({ query: { name } })
           }
+          disabled={demoTrace.isPending}
         />
         <Button
           onClick={() => demoTrace.mutate({ query: { name } })}
-          disabled={!name}
+          disabled={!name || demoTrace.isPending}
         >
-          {t("sayHello")}
+          {demoTrace.isPending ? t("loading") : t("sayHello")}
         </Button>
       </div>
       <Button
