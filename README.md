@@ -71,16 +71,19 @@ This command starts:
 | `bun run db:start` | Start PostgreSQL container |
 | `bun run db:studio` | Open Drizzle Studio |
 | `bun run db:reset` | Reset database (destroys all data) |
-| `bun run db:generate` | Generate migrations from schema changes |
+| `bun run db:push` | Sync schema to DB (dev only, no migrations) |
+| `bun run db:generate` | Generate migration files from schema changes |
 | `bun run db:migrate` | Apply pending migrations |
 | `bun run db:regenerate-auth` | Regenerate Better Auth schema |
 | `bun run import:staging` | Import data from staging |
 
-Re-run `db:regenerate-auth` when:
-- Adding Better Auth plugins (OAuth, 2FA, organizations, etc.)
-- Upgrading Better Auth with schema changes
+**Workflow:**
+- **Development:** Use `db:push` for fast iteration (no migration files)
+- **Staging/Production:** Use `db:generate` + `db:migrate` (tracked, reviewable changes)
 
-**Note:** The schema is split into two files:
+Re-run `db:regenerate-auth` when adding Better Auth plugins or upgrading.
+
+**Schema files:**
 - `server/database/schema/auth.ts` - Auto-generated (safe to overwrite)
 - `server/database/schema/app.ts` - Your custom tables (never overwritten)
 

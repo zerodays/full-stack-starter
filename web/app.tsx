@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import { AuthDemo } from "~/components/auth-demo";
 import { Button } from "~/components/ui/button";
 import i18n from "./i18n/i18n";
 import { withSpan } from "./tracing";
@@ -68,6 +69,7 @@ export default function App() {
       <Button variant="outline" onClick={triggerTrace}>
         Trigger OpenTelemetry Trace
       </Button>
+      <AuthDemo />
     </div>
   );
 }

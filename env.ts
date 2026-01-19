@@ -3,7 +3,9 @@ import { z } from "zod";
 
 // Use Bun.env if available, otherwise fall back to process.env (for CLI tools like better-auth)
 const runtimeEnv =
-  typeof Bun !== "undefined" ? Bun.env : (process.env as Record<string, string | undefined>);
+  typeof Bun !== "undefined"
+    ? Bun.env
+    : (process.env as Record<string, string | undefined>);
 
 const env = createEnv({
   server: {

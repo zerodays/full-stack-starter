@@ -2,7 +2,7 @@ import {
   addSpanAttributes,
   createWithSpan,
   recordSpanError,
-} from "@/lib/tracing";
+} from "@/shared/tracing";
 
 /**
  * Server-side tracing helper. Use for custom spans around business logic.

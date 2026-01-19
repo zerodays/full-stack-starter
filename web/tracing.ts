@@ -2,7 +2,7 @@ import {
   addSpanAttributes,
   createWithSpan,
   recordSpanError,
-} from "@/lib/tracing";
+} from "@/shared/tracing";
 
 /**
  * Frontend tracing helper. Use for user interactions you want to track.

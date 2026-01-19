@@ -10,6 +10,7 @@
     "db:start": "docker compose -f docker-compose.dev.yml up",
     "db:wait": "bash -c 'until docker compose -f docker-compose.dev.yml exec -T postgres pg_isready -U ${POSTGRES_USER:-postgres} > /dev/null 2>&1; do sleep 1; done'",
     "db:reset": "docker compose -f docker-compose.dev.yml down -v && rm -rf db && bun run db:start",
+    "db:push": "infisical run -- drizzle-kit push",
     "db:generate": "infisical run -- drizzle-kit generate",
     "db:migrate": "infisical run -- drizzle-kit migrate",
     "db:regenerate-auth": "infisical run -- npx @better-auth/cli generate --output ./server/database/schema/auth.ts -y",
@@ -45,6 +46,7 @@
   "dependencies": {
     "@hono/otel": "^1.1.0",
     "@hono/zod-validator": "^0.7.6",
+    "@kubiks/otel-better-auth": "^2.0.2",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.67.3",
     "@opentelemetry/context-zone": "^2.3.0",
