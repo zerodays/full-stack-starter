@@ -6,11 +6,6 @@
 
 A modern full-stack starter template with React, Hono, and Capacitor for building web and native mobile apps.
 
-> [!NOTE]
-> This project supports building native iOS and Android apps using Capacitor.
-> 
-> 📖 **See [Capacitor Guide](./capacitor.md)** for setup instructions and development workflow.
-
 ## Tech Stack
 
 | Layer | Technology |
@@ -21,6 +16,7 @@ A modern full-stack starter template with React, Hono, and Capacitor for buildin
 | **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) |
 | **Database** | [PostgreSQL](https://www.postgresql.org/) + [Drizzle ORM](https://orm.drizzle.team/) |
 | **Auth** | [Better Auth](https://www.better-auth.com/) |
+| **Observability** | [OpenTelemetry](https://opentelemetry.io/) + [Axiom](https://axiom.co/) |
 | **i18n** | [i18next](https://www.i18next.com/) |
 | **Validation** | [Zod](https://zod.dev/) |
 | **Linting** | [Biome](https://biomejs.dev/) |
@@ -61,10 +57,12 @@ This command starts:
 | `bun dev` | Start full development environment |
 | `bun run build` | Build for production |
 | `bun start` | Run production server |
-| `bun run lint` | Check code with Biome |
-| `bun run lint:fix` | Fix linting issues |
-| `bun run format` | Check formatting |
-| `bun run format:fix` | Fix formatting issues |
+| `bun run all` | Run all CI checks locally |
+| `bun run typecheck` | Type-check the entire project |
+| `bun run lint` | Fix linting issues |
+| `bun run lint:check` | Check code with Biome |
+| `bun run format` | Fix formatting issues |
+| `bun run format:check` | Check formatting |
 
 ### Database
 
@@ -87,9 +85,28 @@ This command starts:
 │   └── styles.css       # Global styles
 ├── server/              # Backend (Hono)
 │   ├── server.tsx       # Server entry point
+│   ├── logger.ts        # Pino logger with trace context
 │   └── db/              # Database schema & config
+├── lib/                 # Shared utilities
+│   └── tracing.ts       # OpenTelemetry helpers
+├── docs/                # Documentation
 ├── scripts/             # Utility scripts
-├── android/             # Android native project
-├── ios/                 # iOS native project
-└── capacitor.config.ts  # Capacitor configuration
+└── env.ts               # Environment schema (Zod)
 ```
+
+## CI
+
+GitHub Actions runs on every push and PR to `master`:
+
+- Format check
+- Lint
+- Type check
+- Build
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [OpenTelemetry Guide](./docs/otel-guide.md) | How to add tracing to your code |
+| [OpenTelemetry Architecture](./docs/otel-architecture.md) | Why the setup is structured this way |
+| [Capacitor Guide](./docs/capacitor.md) | Building native iOS/Android apps |

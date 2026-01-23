@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
 import i18n from "./i18n/i18n";
+import { withSpan } from "./tracing";
 
 export default function App() {
   const { t } = useTranslation("common");
@@ -13,6 +14,20 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => setMsg(data.message));
   }, []);
+
+  const triggerTrace = async () => {
+    setMsg("Starting trace...");
+
+    await withSpan(
+      "ui.click.demo_button",
+      { component: "App", event: "click" },
+      async () => {
+        const res = await fetch("/api/demo-trace");
+        const data = await res.json();
+        setMsg(data.message);
+      },
+    );
+  };
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-8">
@@ -49,6 +64,9 @@ export default function App() {
         }
       >
         {t("testMe")}
+      </Button>
+      <Button variant="outline" onClick={triggerTrace}>
+        Trigger OpenTelemetry Trace
       </Button>
     </div>
   );

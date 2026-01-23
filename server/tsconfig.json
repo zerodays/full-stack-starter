@@ -1,8 +1,9 @@
 {
   "extends": "../tsconfig.json",
+  "include": ["./**/*.tsx", "./**/*.ts"],
+  "exclude": [],
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
-  },
-  "include": ["./**/*.tsx", "./**/*.ts"]
+  }
 }

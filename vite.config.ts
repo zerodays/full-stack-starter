@@ -13,35 +13,35 @@ export default defineConfig(({ command }) => {
     },
   };
 
-    return {
-      resolve: resolveConfig,
-      build: {
-        minify: true,
-        ssr: true, // Optimizes for Bun/Node
-        outDir: "dist-server", // Server builds to dist-server
-        emptyOutDir: true, // Clean the server output folder
-        rollupOptions: {
-          input: "./server/server.tsx",
-          output: {
-            entryFileNames: "_worker.js",
-          },
+  return {
+    resolve: resolveConfig,
+    build: {
+      minify: true,
+      ssr: true, // Optimizes for Bun/Node
+      outDir: "dist-server", // Server builds to dist-server
+      emptyOutDir: true, // Clean the server output folder
+      rollupOptions: {
+        input: "./server/server.tsx",
+        output: {
+          entryFileNames: "_worker.js",
         },
       },
-      server: {
-        watch: {
-          ignored: ["**/.direnv/**", "**/.git/**", "**/node_modules/**"],
-        },
+    },
+    server: {
+      watch: {
+        ignored: ["**/.direnv/**", "**/.git/**", "**/node_modules/**"],
       },
-      optimizeDeps: {
-        entries: ["./web/client.ts", "./web/app.tsx"],
-      },
-      plugins: [
-        tailwindcss(),
-        command === "serve" ? react() : undefined,
-        devServer({
-          entry: "./server/server.tsx",
-          adapter: bunAdapter(),
-        }),
-      ],
-    };
+    },
+    optimizeDeps: {
+      entries: ["./web/client.ts", "./web/app.tsx"],
+    },
+    plugins: [
+      tailwindcss(),
+      command === "serve" ? react() : undefined,
+      devServer({
+        entry: "./server/server.tsx",
+        adapter: bunAdapter(),
+      }),
+    ],
+  };
 });
