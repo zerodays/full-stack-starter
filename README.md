@@ -143,8 +143,5 @@ GitHub Actions runs on every push and PR to `master`:
 
 ## TODO
 
-- [x] RPC type safety (Hono RPC)
-- [x] Better Auth integration
 - [ ] DB sync from staging (implement `scripts/import-staging.sh`)
 - [ ] Sentry frontend integration
-- [ ] Capacitor setup (docs exist, not installed)
