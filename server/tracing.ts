@@ -1,6 +1,4 @@
-import {
-  createWithSpan
-} from "@/shared/tracing";
+import { createWithSpan } from "@/shared/tracing";
 
 /**
  * Server-side tracing helper. Use for custom spans around business logic.
