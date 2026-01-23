@@ -1,5 +1,5 @@
-import type { Plugin } from 'vite';
-import path from 'path';
+import path from "node:path";
+import type { Plugin } from "vite";
 
 interface PreventImportsOptions {
   /** The directory path to block imports from (can be relative or absolute) */
@@ -21,12 +21,16 @@ interface PreventImportsOptions {
  *
  * @example
  * preventImports({ folder: './server', ignores: ['./server/shared.ts'] })
- * 
+ *
  * @example
  * // Only block imports from web/ to server/
  * preventImports({ folder: './server', fromFolder: './web' })
  */
-export const preventImports = ({ folder, fromFolder, ignores }: PreventImportsOptions): Plugin => {
+export const preventImports = ({
+  folder,
+  fromFolder,
+  ignores,
+}: PreventImportsOptions): Plugin => {
   // Normalize the blocked path to an absolute path for consistent comparison
   const blockedPath = path.resolve(folder);
   // Normalize the fromFolder path if provided
@@ -35,9 +39,9 @@ export const preventImports = ({ folder, fromFolder, ignores }: PreventImportsOp
   const ignoredPaths = (ignores ?? []).map((p) => path.resolve(p));
 
   return {
-    name: 'vite-plugin-prevent-imports',
+    name: "vite-plugin-prevent-imports",
     // ensure this runs before other resolution plugins
-    enforce: 'pre' as const,
+    enforce: "pre" as const,
 
     async resolveId(source, importer, options) {
       // If there is no importer, it's an entry point (allow it)
@@ -64,15 +68,16 @@ export const preventImports = ({ folder, fromFolder, ignores }: PreventImportsOp
         // Check if the resolved path is in the ignore list
         const isIgnored = ignoredPaths.some(
           (ignoredPath) =>
-            resolution.id === ignoredPath || resolution.id.startsWith(ignoredPath + path.sep)
+            resolution.id === ignoredPath ||
+            resolution.id.startsWith(ignoredPath + path.sep),
         );
 
         if (!isIgnored) {
           throw new Error(
             `\n🚨 SECURITY ERROR: Blocked import detected.\n` +
-            `   File: ${importer}\n` +
-            `   Attempted to import: ${source}\n` +
-            `   Resolved to blocked path: ${resolution.id}\n`
+              `   File: ${importer}\n` +
+              `   Attempted to import: ${source}\n` +
+              `   Resolved to blocked path: ${resolution.id}\n`,
           );
         }
       }

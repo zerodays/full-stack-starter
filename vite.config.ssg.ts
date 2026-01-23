@@ -19,11 +19,9 @@ export default defineConfig(() => {
     plugins: [
       // Do not allow server code to be imported into the client build
       preventImports({
-        fromFolder: path.resolve(__dirname, 'web'),
-        folder: path.resolve(__dirname, 'server'),
-        ignores: [
-          "./server/server.tsx",
-        ]
+        fromFolder: path.resolve(__dirname, "web"),
+        folder: path.resolve(__dirname, "server"),
+        ignores: ["./server/server.tsx"],
       }),
       react(),
       tailwindcss(),
