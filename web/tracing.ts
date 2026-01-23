@@ -1,7 +1,5 @@
 import {
-  addSpanAttributes,
-  createWithSpan,
-  recordSpanError,
+  createWithSpan
 } from "@/shared/tracing";
 
 /**
@@ -28,5 +26,3 @@ import {
  * );
  */
 export const withSpan = createWithSpan("web");
-
-export { addSpanAttributes, recordSpanError };

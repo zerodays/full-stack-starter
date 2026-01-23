@@ -13,7 +13,7 @@ import {
 } from "@opentelemetry/semantic-conventions";
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from "@opentelemetry/semantic-conventions/incubating";
 
-export function initInstrumentation() {
+function initInstrumentation() {
   if (typeof window === "undefined") return;
 
   // Only propagate trace headers to same-origin requests to avoid leaking context to third parties

@@ -6,7 +6,7 @@ const baseURL =
     ? `${window.location.origin}/api/auth`
     : "http://localhost:5173/api/auth";
 
-export const authClient = createAuthClient({
+const authClient = createAuthClient({
   baseURL,
 });
 
