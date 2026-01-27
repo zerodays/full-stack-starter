@@ -12,6 +12,7 @@
     "db:push": "infisical run -- drizzle-kit push",
     "db:generate": "infisical run -- drizzle-kit generate",
     "db:migrate": "infisical run -- drizzle-kit migrate",
+    "db:import": "infisical run -- bun run scripts/db-import.ts",
     "db:regenerate-auth": "infisical run -- npx @better-auth/cli generate --output ./server/database/schema/auth.ts -y",
     "build": "vite-react-ssg build -c vite.config.ssg.ts && vite build",
     "start": "NODE_ENV=production PORT=8080 bun run dist-server/_worker.js",
