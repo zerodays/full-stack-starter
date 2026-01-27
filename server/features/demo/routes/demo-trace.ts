@@ -1,10 +1,9 @@
 import { zValidator } from "@hono/zod-validator";
 import { sql } from "drizzle-orm";
-import { Hono } from "hono";
 import { z } from "zod";
-import { db } from "@/server/database";
-import { logger } from "@/server/logger";
-import { withSpan } from "@/server/tracing";
+import { logger } from "@/server/lib/logger";
+import { createRouter } from "@/server/lib/router";
+import { withSpan } from "@/server/lib/tracing";
 
 const querySchema = z.object({
   name: z.string().min(1).optional(),
@@ -12,7 +11,7 @@ const querySchema = z.object({
   skipDb: z.coerce.boolean().optional().default(false),
 });
 
-export const demoTraceRoute = new Hono().get(
+export const demoTraceRoute = createRouter().get(
   "/",
   zValidator("query", querySchema),
   async (c) => {
@@ -22,6 +21,7 @@ export const demoTraceRoute = new Hono().get(
 
     if (!skipDb) {
       // This DB query is auto-traced by @opentelemetry/instrumentation-pg
+      const db = c.get("db");
       await db.execute(
         sql`SELECT 1 as "connection_test", NOW() as "current_time"`,
       );

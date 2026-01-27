@@ -21,7 +21,7 @@ export default defineConfig(() => {
       preventImports({
         fromFolder: path.resolve(__dirname, "web"),
         folder: path.resolve(__dirname, "server"),
-        ignores: ["./server/server.tsx"],
+        ignores: ["./server/server.ts"],
       }),
       react(),
       tailwindcss(),

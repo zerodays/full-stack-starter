@@ -1,5 +1,5 @@
-import { Hono } from "hono";
+import { createRouter } from "@/server/lib/router";
 
-export const getHealthRoute = new Hono().get("/", (c) => {
+export const getHealthRoute = createRouter().get("/", (c) => {
   return c.json({ status: "ok" });
 });

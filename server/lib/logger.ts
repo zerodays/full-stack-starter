@@ -11,7 +11,7 @@ import { requestContext } from "./request-context";
  * - userId/userEmail when inside an authenticated request
  *
  * Usage:
- *   import { logger } from "@/server/logger";
+ *   import { logger } from "@/server/lib/logger";
  *   logger.info("User clicked checkout");
  *
  * Output (authenticated request with active span):

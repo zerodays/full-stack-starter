@@ -1,13 +1,13 @@
-import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import env from "@/env";
-import { logger } from "@/server/logger";
+import { logger } from "@/server/lib/logger";
+import { createRouter } from "@/server/lib/router";
 
 /**
  * OpenTelemetry trace proxy for frontend.
  * Forwards browser traces to Axiom, adding auth headers server-side.
  */
-export const postTracesRoute = new Hono().post("/", async (c) => {
+export const postTracesRoute = createRouter().post("/", async (c) => {
   if (!env.AXIOM_TOKEN || !env.AXIOM_DATASET) {
     logger.error("Axiom not configured for trace proxy");
     return c.json({ error: "Axiom not configured" }, 503);

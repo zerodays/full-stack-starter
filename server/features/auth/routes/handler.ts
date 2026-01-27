@@ -1,8 +1,8 @@
 import { trace } from "@opentelemetry/api";
-import { Hono } from "hono";
-import { auth } from "@/server/auth";
+import { auth } from "@/server/lib/auth";
+import { createRouter } from "@/server/lib/router";
 
-export const authHandler = new Hono().all("/*", (c) => {
+export const authHandler = createRouter().all("/*", (c) => {
   // Add auth action to current span for better observability
   // e.g. /api/auth/sign-in/email -> "sign-in/email"
   const span = trace.getActiveSpan();

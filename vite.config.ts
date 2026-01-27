@@ -22,7 +22,7 @@ export default defineConfig(({ command }) => {
       outDir: "dist-server", // Server builds to dist-server
       emptyOutDir: true, // Clean the server output folder
       rollupOptions: {
-        input: "./server/server.tsx",
+        input: "./server/server.ts",
         output: {
           entryFileNames: "_worker.js",
         },
@@ -41,12 +41,12 @@ export default defineConfig(({ command }) => {
       preventImports({
         fromFolder: path.resolve(__dirname, "web"),
         folder: path.resolve(__dirname, "server"),
-        ignores: ["./server/server.tsx"],
+        ignores: ["./server/server.ts"],
       }),
       tailwindcss(),
       command === "serve" ? react() : undefined,
       devServer({
-        entry: "./server/server.tsx",
+        entry: "./server/server.ts",
         adapter: bunAdapter(),
       }),
     ],

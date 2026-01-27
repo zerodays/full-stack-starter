@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { createRouter } from "@/server/lib/router";
 import { authHandler } from "./routes/handler";
 
-export const authFeature = new Hono().route("/", authHandler);
+export const authFeature = createRouter().route("/", authHandler);

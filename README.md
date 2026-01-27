@@ -101,11 +101,17 @@ Re-run `db:regenerate-auth` when adding Better Auth plugins or upgrading.
 │   ├── i18n/                # Internationalization
 │   └── styles.css           # Global styles
 ├── server/                  # Backend (Hono)
-│   ├── server.tsx           # Server entry point & route assembly
-│   ├── auth.ts              # Better Auth configuration
-│   ├── logger.ts            # Pino logger with trace context
-│   ├── middleware/          # Global middleware
-│   │   └── auth.ts          # User context middleware
+│   ├── server.ts            # Server entry point & route assembly
+│   ├── lib/                 # Shared utilities
+│   │   ├── auth.ts          # Better Auth configuration
+│   │   ├── logger.ts        # Pino logger with trace context
+│   │   ├── router.ts        # Typed Hono router factory
+│   │   ├── tracing.ts       # OpenTelemetry tracing helpers
+│   │   ├── request-context.ts # AsyncLocalStorage request context
+│   │   └── instrumentation.ts # Node SDK setup
+│   ├── middleware/          # Hono middleware
+│   │   ├── auth.middleware.ts # User context middleware
+│   │   └── db.middleware.ts   # Database middleware
 │   ├── features/            # Feature modules
 │   │   ├── auth/            # Auth routes (Better Auth handler)
 │   │   ├── health/          # Health check

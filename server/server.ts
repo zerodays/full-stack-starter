@@ -1,5 +1,5 @@
 // IMPORTANT: Instrumentation must be first to patch modules before they're loaded
-import "@/server/instrumentation";
+import "@/server/lib/instrumentation";
 
 import { httpInstrumentationMiddleware } from "@hono/otel";
 import * as Sentry from "@sentry/bun";
@@ -10,7 +10,9 @@ import { authFeature } from "@/server/features/auth";
 import { demo } from "@/server/features/demo";
 import { health } from "@/server/features/health";
 import { otel } from "@/server/features/otel";
-import { userContextMiddleware } from "@/server/middleware/auth";
+import { createRouter } from "@/server/lib/router";
+import { authMiddleware } from "@/server/middleware/auth.middleware";
+import { dbMiddleware } from "@/server/middleware/db.middleware";
 
 // First, init Sentry to capture errors
 Sentry.init({
@@ -18,19 +20,25 @@ Sentry.init({
   sendDefaultPii: true,
 });
 
-// API routes that will be traced and exposed via RPC
-const api = new Hono()
+// Public API routes (no auth required)
+const publicApi = new Hono()
   .route("/auth", authFeature)
-  .route("/health", health)
+  .route("/health", health);
+
+// Protected API routes (auth + db middleware)
+const protectedApi = createRouter()
+  .use(authMiddleware)
+  .use(dbMiddleware)
   .route("/", demo);
+
+// API routes that will be traced and exposed via RPC
+const api = new Hono().route("/", publicApi).route("/", protectedApi);
 
 const app = new Hono()
   // OTel proxy must be BEFORE tracing middleware (avoids recursive tracing)
   .route("/api/otel", otel)
   // OpenTelemetry Middleware - traces all requests after this point
   .use(httpInstrumentationMiddleware())
-  // User context middleware - injects user info into traces and logs
-  .use("*", userContextMiddleware)
   // Traced API routes - mounted AFTER middleware
   .route("/api", api);
 

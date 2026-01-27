@@ -4,8 +4,11 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "infisical run -- bun scripts/dev.ts",
+    "dev": "infisical run -- bun -b concurrently --names \"DOCKER,APP\" -c \"blue,magenta\" \"bun run db:start\" \"bun run db:wait && bun run dev:app\"",
+    "dev:app": "concurrently --names \"VITE,STUDIO\" -c \"cyan,yellow\" \"vite dev\" \"bun run db:studio\"",
+    "db:studio": "drizzle-kit studio",
     "db:start": "docker compose -f docker-compose.dev.yml up",
+    "db:wait": "bash -c 'until docker compose -f docker-compose.dev.yml exec -T postgres pg_isready -U ${POSTGRES_USER:-postgres} > /dev/null 2>&1; do sleep 1; done'",
     "db:push": "infisical run -- drizzle-kit push",
     "db:generate": "infisical run -- drizzle-kit generate",
     "db:migrate": "infisical run -- drizzle-kit migrate",
