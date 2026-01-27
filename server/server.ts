@@ -11,7 +11,10 @@ import { demo } from "@/server/features/demo";
 import { health } from "@/server/features/health";
 import { otel } from "@/server/features/otel";
 import { createRouter } from "@/server/lib/router";
-import { authMiddleware } from "@/server/middleware/auth.middleware";
+import {
+  authMiddleware,
+  sessionMiddleware,
+} from "@/server/middleware/auth.middleware";
 import { dbMiddleware } from "@/server/middleware/db.middleware";
 
 // First, init Sentry to capture errors
@@ -27,6 +30,7 @@ const publicApi = new Hono()
 
 // Protected API routes (auth + db middleware)
 const protectedApi = createRouter()
+  .use(sessionMiddleware)
   .use(authMiddleware)
   .use(dbMiddleware)
   .route("/", demo);
