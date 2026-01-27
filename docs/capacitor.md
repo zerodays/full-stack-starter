@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="capacitor.svg" width="100%" alt="Capacitor Guide">
+  <img src="./assets/capacitor.svg" width="100%" alt="Capacitor Guide">
 </p>
 
 A comprehensive guide for adding [Capacitor](https://capacitorjs.com/) to this project to build native iOS and Android apps from your web codebase.

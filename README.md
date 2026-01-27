@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="title.svg" width="100%" alt="Banner Title">
+  <img src="docs/assets/title.svg" width="100%" alt="Banner Title">
 </p>
 
 # Full Stack Starter
