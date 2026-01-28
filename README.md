@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="title.svg" width="100%" alt="Banner Title">
+  <img src="docs/assets/title.svg" width="100%" alt="Banner Title">
 </p>
 
 # Full Stack Starter
@@ -71,27 +71,63 @@ This command starts:
 | `bun run db:start` | Start PostgreSQL container |
 | `bun run db:studio` | Open Drizzle Studio |
 | `bun run db:reset` | Reset database (destroys all data) |
+| `bun run db:push` | Sync schema to DB (dev only, no migrations) |
+| `bun run db:generate` | Generate migration files from schema changes |
+| `bun run db:migrate` | Apply pending migrations |
+| `bun run db:regenerate-auth` | Regenerate Better Auth schema |
 | `bun run import:staging` | Import data from staging |
+
+**Workflow:**
+- **Development:** Use `db:push` for fast iteration (no migration files)
+- **Staging/Production:** Use `db:generate` + `db:migrate` (tracked, reviewable changes)
+
+Re-run `db:regenerate-auth` when adding Better Auth plugins or upgrading.
+
+**Schema files:**
+- `server/database/schema/auth.ts` - Auto-generated (safe to overwrite)
+- `server/database/schema/app.ts` - Your custom tables (never overwritten)
 
 ## Project Structure
 
 ```
-├── web/                 # Frontend (React)
-│   ├── app.tsx          # Main app component
-│   ├── client.tsx       # Client entry point
-│   ├── router.tsx       # Route definitions
-│   ├── components/      # UI components
-│   ├── i18n/            # Internationalization
-│   └── styles.css       # Global styles
-├── server/              # Backend (Hono)
-│   ├── server.tsx       # Server entry point
-│   ├── logger.ts        # Pino logger with trace context
-│   └── db/              # Database schema & config
-├── lib/                 # Shared utilities
-│   └── tracing.ts       # OpenTelemetry helpers
-├── docs/                # Documentation
-├── scripts/             # Utility scripts
-└── env.ts               # Environment schema (Zod)
+├── web/                     # Frontend (React)
+│   ├── app.tsx              # Main app component
+│   ├── client.tsx           # Client entry point
+│   ├── router.tsx           # Route definitions
+│   ├── components/          # UI components
+│   ├── lib/
+│   │   ├── api.ts           # Hono RPC client (type-safe API calls)
+│   │   └── auth-client.ts   # Better Auth client
+│   ├── i18n/                # Internationalization
+│   └── styles.css           # Global styles
+├── server/                  # Backend (Hono)
+│   ├── server.ts            # Server entry point & route assembly
+│   ├── lib/                 # Shared utilities
+│   │   ├── auth.ts          # Better Auth configuration
+│   │   ├── logger.ts        # Pino logger with trace context
+│   │   ├── router.ts        # Typed Hono router factory
+│   │   ├── tracing.ts       # OpenTelemetry tracing helpers
+│   │   ├── request-context.ts # AsyncLocalStorage request context
+│   │   └── instrumentation.ts # Node SDK setup
+│   ├── middleware/          # Hono middleware
+│   │   ├── auth.middleware.ts # User context middleware
+│   │   └── db.middleware.ts   # Database middleware
+│   ├── features/            # Feature modules
+│   │   ├── auth/            # Auth routes (Better Auth handler)
+│   │   ├── health/          # Health check
+│   │   └── demo/            # Demo routes
+│   │       └── routes/      # Route handlers (one file per route)
+│   └── database/
+│       ├── index.ts         # Drizzle connection
+│       └── schema/
+│           ├── auth.ts      # Better Auth tables (auto-generated)
+│           ├── app.ts       # Your custom tables
+│           └── index.ts     # Re-exports all tables
+├── shared/                  # Shared utilities
+│   └── tracing.ts           # OpenTelemetry helpers
+├── docs/                    # Documentation
+├── scripts/                 # Utility scripts
+└── env.ts                   # Environment schema (Zod)
 ```
 
 ## CI
@@ -110,3 +146,8 @@ GitHub Actions runs on every push and PR to `master`:
 | [OpenTelemetry Guide](./docs/otel-guide.md) | How to add tracing to your code |
 | [OpenTelemetry Architecture](./docs/otel-architecture.md) | Why the setup is structured this way |
 | [Capacitor Guide](./docs/capacitor.md) | Building native iOS/Android apps |
+
+## TODO
+
+- [ ] DB sync from staging (implement `scripts/import-staging.sh`)
+- [ ] Sentry frontend integration

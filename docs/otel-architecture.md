@@ -79,7 +79,7 @@ The instrumentation import **must** be first so it can patch modules before they
 // IMPORTANT: Instrumentation must be first
 import "@/server/instrumentation";
 
-import { db } from "@/server/db";  // pg is patched before this loads
+import { db } from "@/server/database";  // pg is patched before this loads
 ```
 
 We've disabled biome's import organizer for this file to preserve the order.

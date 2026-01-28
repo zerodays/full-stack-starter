@@ -1,5 +1,5 @@
 {
-  "include": ["./*.ts", "lib/**/*.ts", "scripts/**/*.ts"],
+  "include": ["./*.ts", "shared/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules", "dist", "dist-server", "server", "web"],
   "compilerOptions": {
     "lib": ["ESNext", "DOM", "DOM.Iterable"],

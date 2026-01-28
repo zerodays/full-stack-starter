@@ -1,4 +1,8 @@
 export default {
-  serverSays: "Server pravi: <strong>{{message}}</strong>",
-  testMe: "Preizkusi me",
+  serverSays: "Strežnik pravi: <strong>{{message}}</strong>",
+  enterName: "Vnesi svoje ime in klikni gumb",
+  namePlaceholder: "Tvoje ime",
+  sayHello: "Pozdravi",
+  loading: "Nalagam...",
+  switchLang: "Zamenjaj jezik",
 } as const;

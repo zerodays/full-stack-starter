@@ -46,6 +46,8 @@ if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
       new FetchInstrumentation({
         ignoreNetworkEvents: true,
         propagateTraceHeaderCorsUrls: [internalDomainsPattern],
+        // Ignore empty URLs (Better Auth makes internal calls with empty URLs)
+        ignoreUrls: [/^$/],
       }),
     ],
   });

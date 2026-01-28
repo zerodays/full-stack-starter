@@ -1,7 +1,7 @@
+// IMPORTANT: Instrumentation must be the FIRST import to patch fetch before
+// any other module (like better-auth) captures a reference to it
+import "./instrumentation";
 import "@vitejs/plugin-react/preamble";
-import { initInstrumentation } from "./instrumentation";
-
-initInstrumentation();
 
 import "~/styles.css";
 import "~/i18n/i18n";

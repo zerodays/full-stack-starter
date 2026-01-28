@@ -4,6 +4,7 @@ import bunAdapter from "@hono/vite-dev-server/bun";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { preventImports } from "./vite-plugins";
 
 export default defineConfig(({ command }) => {
   const resolveConfig = {
@@ -21,7 +22,7 @@ export default defineConfig(({ command }) => {
       outDir: "dist-server", // Server builds to dist-server
       emptyOutDir: true, // Clean the server output folder
       rollupOptions: {
-        input: "./server/server.tsx",
+        input: "./server/server.ts",
         output: {
           entryFileNames: "_worker.js",
         },
@@ -36,10 +37,18 @@ export default defineConfig(({ command }) => {
       entries: ["./web/client.ts", "./web/app.tsx"],
     },
     plugins: [
+      // Do not allow server code to be imported into the client build
+      preventImports({
+        fromFolder: path.resolve(__dirname, "web"),
+        folder: path.resolve(__dirname, "server"),
+        // For the Hono RPC to work correctly, we need to allow types to be
+        // imported from `server.ts` to the client code.
+        ignores: ["./server/server.ts"],
+      }),
       tailwindcss(),
       command === "serve" ? react() : undefined,
       devServer({
-        entry: "./server/server.tsx",
+        entry: "./server/server.ts",
         adapter: bunAdapter(),
       }),
     ],
