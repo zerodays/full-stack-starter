@@ -1,4 +1,4 @@
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js/driver";
+import type { PgliteDatabase } from "drizzle-orm/pglite/driver";
 import type { MiddlewareHandler } from "hono";
 import type * as schema from "@/server/database/schema";
 import { logger } from "@/server/lib/logger";
@@ -13,7 +13,7 @@ const testAuthMiddleware: MiddlewareHandler = async (c, next) => {
     return;
   }
 
-  const db: PostgresJsDatabase<typeof schema> = c.get("db");
+  const db: PgliteDatabase<typeof schema> = c.get("db");
 
   // Select the user from the database
   const user = await db.query.user.findFirst({
