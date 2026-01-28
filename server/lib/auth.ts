@@ -19,7 +19,7 @@ export const auth = instrumentBetterAuth(
     session: {
       cookieCache: {
         enabled: true,
-        maxAge: 5 * 60, // 5 minutes
+        maxAge: env.AUTH_COOKIE_MAX_AGE_SECONDS,
       },
     },
   }),
