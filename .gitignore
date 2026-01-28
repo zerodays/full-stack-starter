@@ -43,3 +43,6 @@ db/
 # Dist folders
 dist-static
 dist-server
+
+# Docker Compose environment file
+.env.docker
