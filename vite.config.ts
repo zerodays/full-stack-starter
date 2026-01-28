@@ -41,6 +41,8 @@ export default defineConfig(({ command }) => {
       preventImports({
         fromFolder: path.resolve(__dirname, "web"),
         folder: path.resolve(__dirname, "server"),
+        // For the Hono RPC to work correctly, we need to allow types to be
+        // imported from `server.ts` to the client code.
         ignores: ["./server/server.ts"],
       }),
       tailwindcss(),
