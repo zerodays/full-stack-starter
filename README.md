@@ -123,7 +123,7 @@ Re-run `db:regenerate-auth` when adding Better Auth plugins or upgrading.
 │           ├── auth.ts      # Better Auth tables (auto-generated)
 │           ├── app.ts       # Your custom tables
 │           └── index.ts     # Re-exports all tables
-├── lib/                     # Shared utilities
+├── shared/                  # Shared utilities
 │   └── tracing.ts           # OpenTelemetry helpers
 ├── docs/                    # Documentation
 ├── scripts/                 # Utility scripts
