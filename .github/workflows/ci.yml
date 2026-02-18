@@ -51,14 +51,12 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Run Tests
         env:
-          APP_NAME: ${{ secrets.APP_NAME }}
-          ENV: ${{ secrets.ENV }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
-          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
-          AXIOM_DATASET: ${{ secrets.AXIOM_DATASET }}
-          SERVICE_VERSION: ${{ secrets.SERVICE_VERSION }}
+          APP_NAME: test
+          ENV: development
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          BETTER_AUTH_SECRET: test-secret
+          BETTER_AUTH_URL: http://localhost:3000
+          SERVICE_VERSION: test
         run: bun run test
 
   build:
