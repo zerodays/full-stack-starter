@@ -16,3 +16,55 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  
+  # One-time task to run migrations
+  migrator:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bun drizzle-kit migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env.docker
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-postgres}
+
+  vite:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    env_file: .env.docker
+    environment:
+      - WATCHPACK_POLLING=true
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-postgres}
+    command: bun run dev:app --host=0.0.0.0
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app  # Edits on host are reflected in container
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+
+  studio:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    env_file: .env.docker
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-postgres}
+    command: bun run db:studio --port 4983 --host 0.0.0.0
+    ports:
+      - "4983:4983"
+    volumes:
+      - .:/app  # Edits on host are reflected in container
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully

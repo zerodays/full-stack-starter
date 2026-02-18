@@ -45,10 +45,19 @@ Configure your Infisical project or create a `.env` file with required variables
 bun dev
 ```
 
-This command starts:
-- PostgreSQL database (via Docker)
-- Vite dev server with HMR
-- Drizzle Studio for database management
+This command starts the following services:
+- **PostgreSQL**: Database service on port `5432`.
+- **Migrator**: Automatically runs pending migrations.
+- **Vite**: Development server with Hot Module Replacement at [localhost:5173](http://localhost:5173/).
+- **Drizzle Studio**: Database GUI at [local.drizzle.studio](https://local.drizzle.studio)
+
+The Vite server and Drizzle Studio run inside Docker containers. To ensure the stack remains fast, a custom development image is used. We bind the current directory to a Docker volume, so code changes are immediately reflected in the container.
+
+**Note on dependencies**: Since `node_modules` are cached, you must rebuild the containers if you add or change packages. You can do this by running:
+
+```bash
+bun dev --build
+```
 
 ## Scripts
 
