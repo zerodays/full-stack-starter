@@ -52,5 +52,13 @@ export default defineConfig(({ command }) => {
         adapter: bunAdapter(),
       }),
     ],
+    test: {
+      exclude: ["**/node_modules/**", "**/.direnv/**"],
+      server: {
+        deps: {
+          inline: ["zod"],
+        },
+      },
+    },
   };
 });

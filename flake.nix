@@ -19,6 +19,8 @@
           bun
           infisical
           railway
+          vtsls
+          biome
         ];
         buildInputs = [ ];
       in
