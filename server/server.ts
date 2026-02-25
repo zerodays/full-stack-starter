@@ -47,7 +47,7 @@ const app = new Hono()
   .route("/api", api);
 
 // Static file serving and SPA fallback
-const isProd = env.ENV === "production";
+const isProd = env.ENV !== "development";
 
 if (isProd) {
   app.use(
