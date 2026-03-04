@@ -1,0 +1,23 @@
+[build]
+builder = "RAILPACK"
+
+[environments.pr.deploy]
+# On PR deploys, always wipe the existing database and mirror the current staing database into it
+preDeployCommand = """
+set -e 
+
+# Check if either variable is missing or empty
+if [ -z "$DATABASE_URL" ] || [ -z "$DB_PULL_REQUEST_SOURCE_URL" ]; then
+  echo "❌ Error: Missing required database environment variables. Aborting."
+  exit 1
+fi
+
+echo "🧹 Wiping existing database schema..."
+mise exec -- psql "$DATABASE_URL" --command="DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+
+echo "📥 Cloning database from source URL..."
+mise exec -- pg_dump --no-owner --no-acl --format=c "$DB_PULL_REQUEST_SOURCE_URL" | \\
+mise exec -- pg_restore --no-owner --no-acl --clean --if-exists --exit-on-error --dbname="$DATABASE_URL"
+
+echo "✅ Database mirror complete!"
+"""

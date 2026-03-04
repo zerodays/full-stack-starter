@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "packages": {
+    "node": "22",
+    "bun": "latest",
+    "github:theseus-rs/postgresql-binaries": "latest"
+  },
+  "deploy": {
+    "aptPackages": ["libpq5", "libreadline8"]
+  }
+}
