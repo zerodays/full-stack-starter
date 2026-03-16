@@ -56,6 +56,7 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
           BETTER_AUTH_SECRET: test-secret
           BETTER_AUTH_URL: http://localhost:3000
+          BETTER_AUTH_API_KEY: test-api-key
           SERVICE_VERSION: test
         run: bun run test
 

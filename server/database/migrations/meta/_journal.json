@@ -15,6 +15,13 @@
       "when": 1773665967177,
       "tag": "0001_fat_black_bird",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773670298527,
+      "tag": "0002_shocking_proteus",
+      "breakpoints": true
     }
   ]
 }
