@@ -50,7 +50,11 @@ const app = new Hono()
   // OTel proxy must be BEFORE tracing middleware (avoids recursive tracing)
   .route("/api/otel", otel)
   // OpenTelemetry Middleware - traces all requests after this point
-  .use(httpInstrumentationMiddleware())
+  .use(
+    httpInstrumentationMiddleware({
+      spanNameFactory: (c) => `${c.req.method} ${c.req.path}`,
+    }),
+  )
   // Traced API routes - mounted AFTER middleware
   .route("/api", api);
 
