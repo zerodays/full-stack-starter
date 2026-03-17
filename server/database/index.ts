@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import env from "@/env";
 
-const migrationsFolder = resolve(import.meta.dirname, "migrations");
+const migrationsFolder = resolve(process.cwd(), "server/database/migrations");
 
 export const db = drizzle(env.DATABASE_URL);
 instrumentDrizzleClient(db);
