@@ -6,6 +6,8 @@
 
 A modern full-stack starter template with React, Hono, and Capacitor for building web and native mobile apps.
 
+Start building by runing `bun create zerodays/full-stack-starter my-new-app`.
+
 ## Tech Stack
 
 | Layer | Technology |
