@@ -24,6 +24,7 @@ const env = createEnv({
     OTEL_SERVICE_NAME: z.string().default("server"),
     SERVICE_VERSION: z.string().default("dev"),
     AUTH_COOKIE_MAX_AGE_SECONDS: z.coerce.number().default(60 * 60 * 24 * 7), // 7 days
+    VITEST: z.string().optional(),
   },
 
   // TODO: client secrets
@@ -42,6 +43,7 @@ const env = createEnv({
     OTEL_SERVICE_NAME: runtimeEnv.OTEL_SERVICE_NAME,
     SERVICE_VERSION: runtimeEnv.SERVICE_VERSION,
     AUTH_COOKIE_MAX_AGE_SECONDS: runtimeEnv.AUTH_COOKIE_MAX_AGE_SECONDS,
+    VITEST: runtimeEnv.VITEST,
   },
 });
 export default env;

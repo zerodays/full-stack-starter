@@ -8,6 +8,7 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { HTTPException } from "hono/http-exception";
 import env from "@/env";
+import { runMigrations } from "@/server/database";
 import { authFeature } from "@/server/features/auth";
 import { demo } from "@/server/features/demo";
 import { health } from "@/server/features/health";
@@ -25,6 +26,10 @@ Sentry.init({
   dsn: env.SENTRY_DSN,
   sendDefaultPii: true,
 });
+
+if (env.VITEST == null) {
+  await runMigrations();
+}
 
 // Public API routes (no auth required)
 const publicApi = new Hono()
