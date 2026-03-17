@@ -7,6 +7,7 @@ import * as Sentry from "@sentry/bun";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { HTTPException } from "hono/http-exception";
+import { routePath } from "hono/route";
 import env from "@/env";
 import { runMigrations } from "@/server/database";
 import { authFeature } from "@/server/features/auth";
@@ -52,7 +53,7 @@ const app = new Hono()
   // OpenTelemetry Middleware - traces all requests after this point
   .use(
     httpInstrumentationMiddleware({
-      spanNameFactory: (c) => `${c.req.method} ${c.req.path}`,
+      spanNameFactory: (c) => `${c.req.method} ${routePath(c) ?? c.req.path}`,
     }),
   )
   // Traced API routes - mounted AFTER middleware

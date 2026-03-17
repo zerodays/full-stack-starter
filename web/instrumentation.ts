@@ -44,17 +44,6 @@ export function initInstrumentation() {
       new FetchInstrumentation({
         ignoreUrls: [/.*\/api\/otel\/.*/],
         propagateTraceHeaderCorsUrls: [sameOriginPattern],
-        applyCustomAttributesOnSpan: (span, request, result) => {
-          const responseUrl =
-            result instanceof Response ? result.url : undefined;
-          const requestUrl =
-            request instanceof Request ? request.url : undefined;
-          const url = responseUrl || requestUrl;
-          if (!url) return;
-          const pathname = new URL(url, window.location.origin).pathname;
-          const method = request instanceof Request ? request.method : "GET";
-          span.updateName(`HTTP ${method} ${pathname}`);
-        },
       }),
       new XMLHttpRequestInstrumentation({
         ignoreUrls: [/.*\/api\/otel\/.*/],
