@@ -2,13 +2,17 @@
 builder = "RAILPACK"
 
 [environments.pr.deploy]
-# On PR deploys, always wipe the existing database and mirror the current staing database into it
+# For PR deploys, reset the target database and mirror the current staging database.
+# NOTE: Set DB_PULL_REQUEST_SOURCE_URL to the staging database's public URL.
+# You can copy that URL from Railway, then store it in Infisical as DB_PULL_REQUEST_SOURCE_URL.
+# Also the staging server needs to have a Railway generated public domain (in addition to any
+# custom domain you add).
 preDeployCommand = """
 set -e 
 
 # Check if either variable is missing or empty
 if [ -z "$DATABASE_URL" ] || [ -z "$DB_PULL_REQUEST_SOURCE_URL" ]; then
-  echo "❌ Error: Missing required database environment variables. Aborting."
+  echo "❌ Error: Missing DATABASE_URL or DB_PULL_REQUEST_SOURCE_URL (expected: staging DB public URL). Aborting."
   exit 1
 fi
 
