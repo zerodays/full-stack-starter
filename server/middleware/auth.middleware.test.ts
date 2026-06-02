@@ -1,12 +1,12 @@
 import { expect, test } from "vitest";
 import { createRouter } from "@/server/lib/router";
-import { authMiddleware } from "@/server/middleware/auth.middleware";
+import { requireAuth } from "@/server/middleware/auth.middleware";
 import { getTestApp } from "@/server/utils/testing/test-app";
 import { TestUser1, testUsers } from "@/server/utils/testing/test-users";
 
-// Create a dummy app with requireAuth middleware
+// Create a dummy app with the requireAuth guard
 const testApp = createRouter();
-testApp.use(authMiddleware);
+testApp.use(requireAuth);
 testApp.get("/", (c) => {
   return c.json({ message: "Hello, world!" });
 });

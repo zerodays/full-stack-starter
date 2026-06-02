@@ -12,7 +12,7 @@ export default function App() {
   const { t } = useTranslation("common");
   const [name, setName] = useState("World");
 
-  const demoTraceOptions = api["demo-trace"].$get.mutationOptions({});
+  const demoTraceOptions = api.demo.trace.$get.mutationOptions({});
   const demoTrace = useMutation({
     ...demoTraceOptions,
     mutationFn: (args: Parameters<typeof demoTraceOptions.mutationFn>[0]) =>

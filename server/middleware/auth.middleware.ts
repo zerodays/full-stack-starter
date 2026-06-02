@@ -8,8 +8,8 @@ export type AuthMiddlewareVariables = {
 };
 
 /**
- * Session middleware - resolves the user from the session and populates context.
- * Does not block requests without a session.
+ * Provider: resolves the user from the session and populates context.
+ * Does not block requests without a session — applied ambiently across the API.
  * Must be used after the OpenTelemetry middleware.
  */
 export const sessionMiddleware: MiddlewareHandler = async (c, next) => {
@@ -35,10 +35,11 @@ export const sessionMiddleware: MiddlewareHandler = async (c, next) => {
 };
 
 /**
- * Requires an authenticated user on context. Returns 401 if not set.
- * Must be used after sessionMiddleware (or test auth middleware).
+ * Guard: requires an authenticated user on context. Returns 401 if not set.
+ * Apply per-route (not globally) on the routes that need protection. Relies on
+ * the ambient sessionMiddleware (or test auth middleware) having run first.
  */
-export const authMiddleware: MiddlewareHandler = async (c, next) => {
+export const requireAuth: MiddlewareHandler = async (c, next) => {
   const user = c.get("user");
 
   if (!user) {

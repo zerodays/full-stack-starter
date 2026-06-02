@@ -16,10 +16,7 @@ import { health } from "@/server/features/health";
 import { otel } from "@/server/features/otel";
 import { logger } from "@/server/lib/logger";
 import { createRouter } from "@/server/lib/router";
-import {
-  authMiddleware,
-  sessionMiddleware,
-} from "@/server/middleware/auth.middleware";
+import { sessionMiddleware } from "@/server/middleware/auth.middleware";
 import { dbMiddleware } from "@/server/middleware/db.middleware";
 
 // First, init Sentry to capture errors
@@ -32,20 +29,20 @@ if (env.VITEST == null) {
   await runMigrations();
 }
 
-// Public API routes (no auth required)
-const publicApi = new Hono()
+// API routes — traced and exposed via RPC.
+//
+// Middleware layering (see server/CONVENTIONS.md):
+//   - Ambient providers run on every API route and make no access decision:
+//     they only populate context (optional user, db).
+//   - Access decisions are per-route guards (e.g. `requireAuth` on a route),
+//     never applied globally — so they can't leak onto sibling routes.
+const api = createRouter()
+  // Ambient providers
+  .use(sessionMiddleware, dbMiddleware)
+  // Features — each owns a prefix; protection is declared per-route inside it
   .route("/auth", authFeature)
-  .route("/health", health);
-
-// Protected API routes (auth + db middleware)
-const protectedApi = createRouter()
-  .use(sessionMiddleware)
-  .use(authMiddleware)
-  .use(dbMiddleware)
-  .route("/", demo);
-
-// API routes that will be traced and exposed via RPC
-const api = new Hono().route("/", publicApi).route("/", protectedApi);
+  .route("/health", health)
+  .route("/demo", demo);
 
 const app = new Hono()
   // OTel proxy must be BEFORE tracing middleware (avoids recursive tracing)
