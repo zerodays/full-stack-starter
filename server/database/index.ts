@@ -9,6 +9,8 @@ const migrationsFolder = resolve(process.cwd(), "server/database/migrations");
 export const db = drizzle(env.DATABASE_URL);
 instrumentDrizzleClient(db);
 
+export type Database = typeof db;
+
 export async function runMigrations() {
   await migrate(db, { migrationsFolder });
 }

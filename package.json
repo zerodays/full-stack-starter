@@ -21,7 +21,7 @@
     "all": "bun run format && bun run lint && bun run typecheck && bun run build && bun run test:dev",
     "lint": "biome check . --write && bun run check-locale",
     "test": "vitest run",
-    "test:dev": "infisical run -- vitest watch",
+    "test:dev": "infisical run -- vitest run",
     "lint:check": "biome check . && bun run check-locale",
     "format": "biome format . --write",
     "format:check": "biome format .",
