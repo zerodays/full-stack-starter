@@ -1,18 +1,23 @@
-import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { Hono } from "hono";
 import env from "@/env";
+import { apiError } from "@/server/lib/http";
 import { logger } from "@/server/lib/logger";
-import { createRouter } from "@/server/lib/router";
 
 /**
  * OpenTelemetry trace proxy for frontend.
  * Forwards browser traces to Axiom, adding auth headers server-side.
+ *
+ * Unauthenticated telemetry proxy — no AppEnv (db/user) needed.
  */
-export const postTracesRoute = createRouter().post("/", async (c) => {
+export const postTracesRoute = new Hono().post("/", async (c) => {
   if (!env.AXIOM_TOKEN || !env.AXIOM_DATASET) {
     logger.error("Axiom not configured for trace proxy");
-    return c.json({ error: "Axiom not configured" }, 503);
+    return apiError(c, 503, "Axiom not configured");
   }
 
+  // Deliberately translate upstream/network failures into a logged response
+  // rather than letting them bubble to onError — telemetry-ingestion blips
+  // shouldn't page via Sentry.
   try {
     const body = await c.req.arrayBuffer();
     const contentType =
@@ -25,21 +30,21 @@ export const postTracesRoute = createRouter().post("/", async (c) => {
         "x-axiom-dataset": env.AXIOM_DATASET,
         "Content-Type": contentType,
       },
-      body: body,
+      body,
     });
 
     if (!response.ok) {
       const text = await response.text();
-      logger.error({ upstreamError: text }, "Axiom error:");
-      return c.json(
-        { error: "Upstream error", details: text },
-        response.status as ContentfulStatusCode,
+      logger.error(
+        { status: response.status, upstreamError: text },
+        "Axiom error",
       );
+      return apiError(c, 502, "Upstream error");
     }
 
     return c.json({ success: true });
-  } catch (e) {
-    logger.error({ error: e }, "Proxy error:");
-    return c.json({ error: "Proxy error" }, 500);
+  } catch (error) {
+    logger.error({ error }, "Trace proxy error");
+    return apiError(c, 502, "Trace proxy error");
   }
 });

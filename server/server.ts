@@ -14,6 +14,7 @@ import { authFeature } from "@/server/features/auth";
 import { demo } from "@/server/features/demo";
 import { health } from "@/server/features/health";
 import { otel } from "@/server/features/otel";
+import { apiError } from "@/server/lib/http";
 import { logger } from "@/server/lib/logger";
 import { createRouter } from "@/server/lib/router";
 import { sessionMiddleware } from "@/server/middleware/auth.middleware";
@@ -58,7 +59,7 @@ const app = new Hono()
 
 app.notFound((c) => {
   logger.warn("Route not found");
-  return c.json({ error: "Not found" }, 404);
+  return apiError(c, 404, "Not found");
 });
 
 app.onError((err, c) => {
