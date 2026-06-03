@@ -1,4 +1,5 @@
 import { trace } from "@opentelemetry/api";
+import * as Sentry from "@sentry/bun";
 import type { MiddlewareHandler } from "hono";
 import { auth } from "@/server/lib/auth";
 import { requestContext } from "@/server/lib/request-context";
@@ -21,6 +22,8 @@ export const sessionMiddleware: MiddlewareHandler = async (c, next) => {
     const span = trace.getActiveSpan();
     span?.setAttribute("user.id", session.user.id);
     span?.setAttribute("user.email", session.user.email);
+
+    Sentry.setUser({ id: session.user.id, email: session.user.email });
 
     await requestContext.run(
       { userId: session.user.id, userEmail: session.user.email },

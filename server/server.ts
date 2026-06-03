@@ -62,18 +62,29 @@ app.notFound((c) => {
 });
 
 app.onError((err, c) => {
+  const span = trace.getActiveSpan();
+
   if (err instanceof HTTPException) {
     const level = err.status >= 500 ? "error" : "warn";
     logger[level]({ status: err.status }, err.message);
-    trace.getActiveSpan()?.setAttribute("error.reason", err.message);
+    span?.setAttribute("error.reason", err.message);
+    // Library-thrown 5xx is a real incident; 4xx is expected and would be noise.
+    if (err.status >= 500) Sentry.captureException(err);
     return err.getResponse();
   }
 
+  // Unexpected: log, record on the trace, report to Sentry, return a generic 500.
+  // onError catches the throw and returns, so Sentry's default fetch-boundary
+  // capture never fires — we must report it explicitly here.
   logger.error({ err }, "Unhandled error");
-  const span = trace.getActiveSpan();
   span?.recordException(err);
   span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-  return c.json({ error: "Internal server error" }, 500);
+  Sentry.captureException(err);
+  // Return the trace id so a user-reported 500 can be matched to its trace.
+  return c.json(
+    { error: "Internal server error", traceId: span?.spanContext().traceId },
+    500,
+  );
 });
 
 // Static file serving and SPA fallback
