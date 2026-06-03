@@ -1,6 +1,5 @@
-import type { PgliteDatabase } from "drizzle-orm/pglite/driver";
 import type { MiddlewareHandler } from "hono";
-import type * as schema from "@/server/database/schema";
+import type { Database } from "@/server/database";
 import { logger } from "@/server/lib/logger";
 
 const testAuthMiddleware: MiddlewareHandler = async (c, next) => {
@@ -13,7 +12,7 @@ const testAuthMiddleware: MiddlewareHandler = async (c, next) => {
     return;
   }
 
-  const db: PgliteDatabase<typeof schema> = c.get("db");
+  const db: Database = c.get("db");
 
   // Select the user from the database
   const user = await db.query.user.findFirst({
