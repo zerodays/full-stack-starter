@@ -2,6 +2,7 @@ import { trace } from "@opentelemetry/api";
 import * as Sentry from "@sentry/bun";
 import type { MiddlewareHandler } from "hono";
 import { auth } from "@/server/lib/auth";
+import { apiError } from "@/server/lib/http";
 import { requestContext } from "@/server/lib/request-context";
 
 export type AuthMiddlewareVariables = {
@@ -46,7 +47,7 @@ export const requireAuth: MiddlewareHandler = async (c, next) => {
   const user = c.get("user");
 
   if (!user) {
-    return c.json({ error: "Unauthorized" }, 401);
+    return apiError(c, 401, "Unauthorized");
   }
 
   await next();
