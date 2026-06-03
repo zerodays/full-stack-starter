@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import type { Database } from "@/server/database";
 import { logger } from "@/server/lib/logger";
 import { withSpan } from "@/server/lib/tracing";
-import type { DemoTraceInput } from "./schema";
+import type { DemoTraceInput } from "./validators";
 
 /**
  * Business logic for the demo trace. Takes the db explicitly (not from context)

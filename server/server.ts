@@ -27,6 +27,8 @@ Sentry.init({
 });
 
 if (env.VITEST == null) {
+  // NOTE: if we ever scale the backend beyond one instance, this becomes a
+  // race condition.
   await runMigrations();
 }
 
