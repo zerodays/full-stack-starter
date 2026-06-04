@@ -29,19 +29,19 @@ export default function App() {
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-8">
       <div className="flex flex-row gap-4">
         <img
-          src="https://react.dev/images/brand/logo_light.svg"
+          src="https://cdn.simpleicons.org/react"
           alt="React Logo"
           className="h-10 w-10"
         />
         <p className="font-bold text-4xl">+</p>
         <img
-          src="https://hono.dev/images/logo.svg"
+          src="https://cdn.simpleicons.org/hono"
           alt="Hono Logo"
           className="h-10 w-10"
         />
         <p className="font-bold text-4xl">+</p>
         <img
-          src="https://tailwindcss.com/_next/static/media/tailwindcss-mark.d52e9897.svg"
+          src="https://cdn.simpleicons.org/tailwindcss"
           alt="Tailwind CSS Logo"
           className="h-10 w-10"
         />
