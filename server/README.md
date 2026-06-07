@@ -73,3 +73,22 @@ createRouter().get("/", requireAuth, handler);  // demo-trace.ts -> /trace
 ```
 
 So a feature is prefix-agnostic — moving it is a one-line change in `server.ts`.
+
+## Database migrations
+
+Schema lives in `database/schema`. The path from a schema edit to staging is
+split on purpose:
+
+1. **Local dev → `db:push`.** Edit the schema, run `bun run db:push`, Drizzle
+   syncs your local DB to match. No migration files — push is for fast iteration
+   while the shape is still moving.
+1. **Branch ready → `db:generate`.** Once the schema has settled, run
+   `bun run db:generate` to emit the SQL migration into `database/migrations`
+   and commit it. That committed SQL is the reviewable, tracked artifact —
+   generate *once*, at the end, not per tweak.
+1. **Staging/prod → automatic.** Migrations apply on server boot via
+   `runMigrations()` (see `server.ts`), so deploying the branch applies the
+   committed migration. Nothing manual.
+
+The rule of thumb: **never `generate` mid-dev.** Push while iterating, generate
+once when the branch is ready, let the deploy apply it.
