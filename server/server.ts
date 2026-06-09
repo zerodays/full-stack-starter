@@ -14,6 +14,7 @@ import { authFeature } from "@/server/features/auth";
 import { demo } from "@/server/features/demo";
 import { health } from "@/server/features/health";
 import { otel } from "@/server/features/otel";
+import { projects } from "@/server/features/projects";
 import { apiError } from "@/server/lib/http";
 import { logger } from "@/server/lib/logger";
 import { createRouter } from "@/server/lib/router";
@@ -45,7 +46,8 @@ const api = createRouter()
   // Features — each owns a prefix; protection is declared per-route inside it
   .route("/auth", authFeature)
   .route("/health", health)
-  .route("/demo", demo);
+  .route("/demo", demo)
+  .route("/projects", projects);
 
 const app = new Hono()
   // OTel proxy must be BEFORE tracing middleware (avoids recursive tracing)

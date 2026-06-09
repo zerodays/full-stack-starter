@@ -56,6 +56,23 @@ The flow is handler → service → queries, with `db` passed down (never grabbe
 from context inside a service). Add each file only when the feature grows or you
 start sharing — a small feature stays one handler.
 
+**Extract on a pressure, not for symmetry.** The default is a fat handler that
+owns its whole route; that locality is the point (one file is the complete
+truth — easiest to read, change, and reason about). Reach for a layer only when
+a concrete pressure shows up:
+
+- **Sharing** — a query is needed by a second route → pull it into `queries.ts`.
+- **Size** — a handler grows past what reads in one screen → pull the logic into
+  a `service` function.
+- **Testability** — you want to exercise a rule without faking HTTP → a `service`
+  function takes `db` + args (never `c`), so it's unit-testable.
+
+The burden of proof is on the layer, not the handler. **Never add a pass-through
+layer** — a `service` that only forwards to one query is a smell; inline it.
+Reflexively giving every feature a `service.ts` + `queries.ts` is how you get
+ravioli: a three-line route smeared across four files, with indirection you pay
+on every read. When in doubt, leave it in the handler.
+
 ## API paths
 
 Paths concatenate down the mount tree — each level adds one segment:
