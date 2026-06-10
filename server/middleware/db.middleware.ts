@@ -1,8 +1,8 @@
 import type { MiddlewareHandler } from "hono/types";
-import { db } from "@/server/database";
+import { type Database, db } from "@/server/database";
 
 export type DbMiddlewareVariables = {
-  db: typeof db;
+  db: Database;
 };
 
 /**

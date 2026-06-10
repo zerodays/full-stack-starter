@@ -14,12 +14,10 @@ import { authFeature } from "@/server/features/auth";
 import { demo } from "@/server/features/demo";
 import { health } from "@/server/features/health";
 import { otel } from "@/server/features/otel";
+import { apiError } from "@/server/lib/http";
 import { logger } from "@/server/lib/logger";
 import { createRouter } from "@/server/lib/router";
-import {
-  authMiddleware,
-  sessionMiddleware,
-} from "@/server/middleware/auth.middleware";
+import { sessionMiddleware } from "@/server/middleware/auth.middleware";
 import { dbMiddleware } from "@/server/middleware/db.middleware";
 
 // First, init Sentry to capture errors
@@ -29,23 +27,25 @@ Sentry.init({
 });
 
 if (env.VITEST == null) {
+  // NOTE: if we ever scale the backend beyond one instance, this becomes a
+  // race condition.
   await runMigrations();
 }
 
-// Public API routes (no auth required)
-const publicApi = new Hono()
+// API routes — traced and exposed via RPC.
+//
+// Middleware layering (see server/CONVENTIONS.md):
+//   - Ambient providers run on every API route and make no access decision:
+//     they only populate context (optional user, db).
+//   - Access decisions are per-route guards (e.g. `requireAuth` on a route),
+//     never applied globally — so they can't leak onto sibling routes.
+const api = createRouter()
+  // Ambient providers
+  .use(sessionMiddleware, dbMiddleware)
+  // Features — each owns a prefix; protection is declared per-route inside it
   .route("/auth", authFeature)
-  .route("/health", health);
-
-// Protected API routes (auth + db middleware)
-const protectedApi = createRouter()
-  .use(sessionMiddleware)
-  .use(authMiddleware)
-  .use(dbMiddleware)
-  .route("/", demo);
-
-// API routes that will be traced and exposed via RPC
-const api = new Hono().route("/", publicApi).route("/", protectedApi);
+  .route("/health", health)
+  .route("/demo", demo);
 
 const app = new Hono()
   // OTel proxy must be BEFORE tracing middleware (avoids recursive tracing)
@@ -61,22 +61,33 @@ const app = new Hono()
 
 app.notFound((c) => {
   logger.warn("Route not found");
-  return c.json({ error: "Not found" }, 404);
+  return apiError(c, 404, "Not found");
 });
 
 app.onError((err, c) => {
+  const span = trace.getActiveSpan();
+
   if (err instanceof HTTPException) {
     const level = err.status >= 500 ? "error" : "warn";
     logger[level]({ status: err.status }, err.message);
-    trace.getActiveSpan()?.setAttribute("error.reason", err.message);
+    span?.setAttribute("error.reason", err.message);
+    // Library-thrown 5xx is a real incident; 4xx is expected and would be noise.
+    if (err.status >= 500) Sentry.captureException(err);
     return err.getResponse();
   }
 
+  // Unexpected: log, record on the trace, report to Sentry, return a generic 500.
+  // onError catches the throw and returns, so Sentry's default fetch-boundary
+  // capture never fires — we must report it explicitly here.
   logger.error({ err }, "Unhandled error");
-  const span = trace.getActiveSpan();
   span?.recordException(err);
   span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-  return c.json({ error: "Internal server error" }, 500);
+  Sentry.captureException(err);
+  // Return the trace id so a user-reported 500 can be matched to its trace.
+  return c.json(
+    { error: "Internal server error", traceId: span?.spanContext().traceId },
+    500,
+  );
 });
 
 // Static file serving and SPA fallback

@@ -20,6 +20,8 @@
           infisical
           railway
           vtsls
+          tailwindcss-language-server
+          vscode-langservers-extracted
           biome
         ];
         buildInputs = [ ];

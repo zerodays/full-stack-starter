@@ -48,6 +48,7 @@ bun dev
 ```
 
 This command starts:
+
 - PostgreSQL database (via Docker)
 - Vite dev server with HMR
 - Drizzle Studio for database management
@@ -80,12 +81,14 @@ This command starts:
 | `bun run import:staging` | Import data from staging |
 
 **Workflow:**
+
 - **Development:** Use `db:push` for fast iteration (no migration files)
 - **Staging/Production:** Use `db:generate` + `db:migrate` (tracked, reviewable changes)
 
 Re-run `db:regenerate-auth` when adding Better Auth plugins or upgrading.
 
 **Schema files:**
+
 - `server/database/schema/auth.ts` - Auto-generated (safe to overwrite)
 - `server/database/schema/app.ts` - Your custom tables (never overwritten)
 
@@ -151,5 +154,4 @@ GitHub Actions runs on every push and PR to `master`:
 
 ## TODO
 
-- [ ] DB sync from staging (implement `scripts/import-staging.sh`)
 - [ ] Sentry frontend integration

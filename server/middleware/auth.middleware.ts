@@ -1,6 +1,8 @@
 import { trace } from "@opentelemetry/api";
+import * as Sentry from "@sentry/bun";
 import type { MiddlewareHandler } from "hono";
 import { auth } from "@/server/lib/auth";
+import { apiError } from "@/server/lib/http";
 import { requestContext } from "@/server/lib/request-context";
 
 export type AuthMiddlewareVariables = {
@@ -8,8 +10,8 @@ export type AuthMiddlewareVariables = {
 };
 
 /**
- * Session middleware - resolves the user from the session and populates context.
- * Does not block requests without a session.
+ * Provider: resolves the user from the session and populates context.
+ * Does not block requests without a session — applied ambiently across the API.
  * Must be used after the OpenTelemetry middleware.
  */
 export const sessionMiddleware: MiddlewareHandler = async (c, next) => {
@@ -21,6 +23,8 @@ export const sessionMiddleware: MiddlewareHandler = async (c, next) => {
     const span = trace.getActiveSpan();
     span?.setAttribute("user.id", session.user.id);
     span?.setAttribute("user.email", session.user.email);
+
+    Sentry.setUser({ id: session.user.id, email: session.user.email });
 
     await requestContext.run(
       { userId: session.user.id, userEmail: session.user.email },
@@ -35,14 +39,15 @@ export const sessionMiddleware: MiddlewareHandler = async (c, next) => {
 };
 
 /**
- * Requires an authenticated user on context. Returns 401 if not set.
- * Must be used after sessionMiddleware (or test auth middleware).
+ * Guard: requires an authenticated user on context. Returns 401 if not set.
+ * Apply per-route (not globally) on the routes that need protection. Relies on
+ * the ambient sessionMiddleware (or test auth middleware) having run first.
  */
-export const authMiddleware: MiddlewareHandler = async (c, next) => {
+export const requireAuth: MiddlewareHandler = async (c, next) => {
   const user = c.get("user");
 
   if (!user) {
-    return c.json({ error: "Unauthorized" }, 401);
+    return apiError(c, 401, "Unauthorized");
   }
 
   await next();
