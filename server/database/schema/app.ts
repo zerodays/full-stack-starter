@@ -1,6 +1,7 @@
 // Custom application tables - add your own tables here
 // This file is NOT overwritten by Better Auth CLI
 
+import { sql } from "drizzle-orm";
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 
@@ -12,7 +13,7 @@ export const timestampColumns = {
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
     .defaultNow()
     .notNull()
-    .$onUpdate(() => new Date()),
+    .$onUpdate(() => sql`now()`),
 };
 
 export const project = pgTable("project", {

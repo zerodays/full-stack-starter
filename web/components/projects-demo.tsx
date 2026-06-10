@@ -38,12 +38,9 @@ export function ProjectsDemo() {
     }),
   );
 
-  // The create response is a typed union: the project OR { error }.
-  // The compiler makes us rule out the error before touching the project.
-  const createError =
-    createProject.data && "error" in createProject.data
-      ? createProject.data.error
-      : null;
+  // `data` is now the project only — errors arrive on `error` as a typed
+  // ApiError. Its `status` is a literal union (e.g. 409) and narrows `body`.
+  const createError = createProject.error?.body.error ?? null;
 
   if (!session) {
     return (
@@ -67,7 +64,7 @@ export function ProjectsDemo() {
           onChange={(event) => {
             setName(event.target.value);
             // Clear a stale "limit reached" error once they start retrying.
-            if (createProject.data) createProject.reset();
+            if (createProject.isError) createProject.reset();
           }}
           disabled={createProject.isPending}
         />

@@ -93,9 +93,9 @@ app.onError((err, c) => {
 });
 
 // Static file serving and SPA fallback
-const isProd = env.ENV !== "development";
+const isProduction = env.ENV !== "development";
 
-if (isProd) {
+if (isProduction) {
   app.use(
     "*",
     serveStatic({
@@ -112,7 +112,7 @@ if (isProd) {
 // SPA fallback: serve index.html for any unmatched routes
 app.get("*", async (c) => {
   const html = await Bun.file(
-    isProd ? "./dist-static/index.html" : "./index.html",
+    isProduction ? "./dist-static/index.html" : "./index.html",
   ).text();
   return c.html(html);
 });
