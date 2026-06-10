@@ -16,7 +16,7 @@
    to check if the resource exists and if the user has access to it, which should
    both return a 404, to avoid leaking information (a 403 would reveal the
    resource exists). We could potentially log the cases tho, but not right now.
-1. Observability is handled via OTEL and Axiom. The later provides an MCP to build
+1. Observability is handled via OTEL and Axiom. The latter provides an MCP to build
    dashboards, which usually results in a better result than the default Axiom one.
 1. Always have the unhappy path in mind.
 
