@@ -35,7 +35,7 @@ if (env.VITEST == null) {
 
 // API routes — traced and exposed via RPC.
 //
-// Middleware layering (see server/CONVENTIONS.md):
+// Middleware layering (see server/README.md):
 //   - Ambient providers run on every API route and make no access decision:
 //     they only populate context (optional user, db).
 //   - Access decisions are per-route guards (e.g. `requireAuth` on a route),

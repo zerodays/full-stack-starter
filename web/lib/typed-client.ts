@@ -1,5 +1,5 @@
 import type {
-  QueryFunctionContext,
+  QueryFunction,
   QueryKey,
   UseMutationOptions,
   UseQueryOptions,
@@ -16,29 +16,50 @@ import type {
 } from "hono/utils/http-status";
 import { ApiError } from "./api-error";
 
+/**
+ * Any Hono client endpoint (`$get`, `$post`, …). `never` parameters make this
+ * the supertype of every endpoint signature (parameters are contravariant);
+ * `safeFetch` owns the one cast back to the concrete input type.
+ */
 type Endpoint = (
-  // biome-ignore lint/suspicious/noExplicitAny: must match any Hono client endpoint signature
-  args: any,
+  args: never,
   options?: ClientRequestOptions,
-  // biome-ignore lint/suspicious/noExplicitAny: must match any Hono ClientResponse variant
-) => Promise<ClientResponse<any, any, any>>;
-
-type ErrorStatusCode = Exclude<ContentfulStatusCode, SuccessStatusCode>;
+) => Promise<ClientResponse<unknown, number>>;
 
 /** The success body — what `data` resolves to. */
 export type SuccessOf<T> = InferResponseType<T, SuccessStatusCode>;
 
 /**
- * The error channel, typed. Distributes over the error statuses the endpoint
- * can `return`, pairing each status with its body. A handler that returns
- * `apiError(c, 409, …)` makes this include `ApiError<409, { error: string }>`.
- * Add a `return apiError(c, 403, …)` and `ApiError<403, …>` appears here too.
+ * One `ApiError` per error response variant. Hono types an endpoint's return
+ * as a union of `ClientResponse<Body, Status>` — one member per `return` in
+ * the handler — so distributing over it pairs each error status with its body.
+ *
+ * A statusless `c.json(x)` is typed with the whole `ContentfulStatusCode`
+ * union instead of a literal; the first branch drops those so a success body
+ * never masquerades as an error variant.
  */
-export type ApiErrorUnionOf<T> = {
-  [Status in ErrorStatusCode]: InferResponseType<T, Status> extends never
-    ? never
-    : ApiError<Status, InferResponseType<T, Status>>;
-}[ErrorStatusCode];
+type ErrorResponseOf<Response> =
+  Response extends ClientResponse<infer Body, infer Status extends number>
+    ? ContentfulStatusCode extends Status
+      ? never
+      : Status extends SuccessStatusCode
+        ? never
+        : ApiError<Status, Body>
+    : never;
+
+/**
+ * The typed error channel. A handler that `return apiError(c, 409, …)` makes
+ * this include `ApiError<409, { error: string }>`; add a `return apiError(c,
+ * 403, …)` and `ApiError<403, …>` appears here too. Endpoints that declare no
+ * error responses fall back to bare `ApiError` — guard 401s, `onError` 500s,
+ * and other unexpected failures still throw at runtime. (Transport failures
+ * bypass this entirely and surface as `TypeError`.)
+ */
+export type ApiErrorUnionOf<T extends Endpoint> = [
+  ErrorResponseOf<Awaited<ReturnType<T>>>,
+] extends [never]
+  ? ApiError
+  : ErrorResponseOf<Awaited<ReturnType<T>>>;
 
 /**
  * Call a raw Hono endpoint, narrow on `response.ok`, and either return the
@@ -50,7 +71,10 @@ async function safeFetch<T extends Endpoint>(
   args: InferRequestType<T>,
   opts?: { signal?: AbortSignal },
 ): Promise<SuccessOf<T>> {
-  const response = await endpoint(args, { init: { signal: opts?.signal } });
+  // `Endpoint` erases the parameter to `never`; the concrete type is `args`'s.
+  const response = await endpoint(args as never, {
+    init: { signal: opts?.signal },
+  });
 
   if (!response.ok) {
     const body = await response
@@ -68,6 +92,14 @@ type InputArg<T> =
     ? { input?: undefined }
     : { input: InferRequestType<T> };
 
+/**
+ * `queryOptions` / `mutationOptions` take TanStack passthrough options and
+ * return the fully typed options object. Declaring the *return* type as
+ * `UseQueryOptions<Data, Error>` (not a bare `{ queryKey, queryFn }`) is
+ * load-bearing: `useQuery`/`useMutation` infer `TError` only from the declared
+ * type of the options they receive — there is no tag- or throw-based error
+ * inference on the hook side.
+ */
 interface QueryEndpoint<T extends Endpoint> {
   call: T;
   queryOptions: (
@@ -76,9 +108,9 @@ interface QueryEndpoint<T extends Endpoint> {
       "queryKey" | "queryFn"
     > &
       InputArg<T>,
-  ) => {
+  ) => UseQueryOptions<SuccessOf<T>, ApiErrorUnionOf<T>> & {
     queryKey: QueryKey;
-    queryFn: (context: QueryFunctionContext) => Promise<SuccessOf<T>>;
+    queryFn: QueryFunction<SuccessOf<T>>;
   };
   mutationOptions: <TContext = unknown>(
     args: Omit<
