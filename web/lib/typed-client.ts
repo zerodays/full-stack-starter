@@ -39,7 +39,10 @@ export type SuccessOf<T> = InferResponseType<T, SuccessStatusCode>;
  * never masquerades as an error variant.
  */
 type ErrorResponseOf<Response> =
-  Response extends ClientResponse<infer Body, infer Status extends number>
+  Response extends ClientResponse<
+    infer Body,
+    infer Status extends ContentfulStatusCode
+  >
     ? ContentfulStatusCode extends Status
       ? never
       : Status extends SuccessStatusCode
@@ -80,7 +83,9 @@ async function safeFetch<T extends Endpoint>(
     const body = await response
       .json()
       .catch(() => ({ error: "Unknown error" }));
-    throw new ApiError(response.status, body);
+    // A non-ok response always carries a contentful status; `Endpoint` only
+    // erased it to `number`.
+    throw new ApiError(response.status as ContentfulStatusCode, body);
   }
 
   return (await response.json()) as SuccessOf<T>;
