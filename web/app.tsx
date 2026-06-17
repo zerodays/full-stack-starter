@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { AuthDemo } from "~/components/auth-demo";
+import { ProjectsDemo } from "~/components/projects-demo";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import i18n from "./i18n/i18n";
@@ -83,6 +84,7 @@ export default function App() {
         {t("switchLang")}
       </Button>
       <AuthDemo />
+      <ProjectsDemo />
     </div>
   );
 }

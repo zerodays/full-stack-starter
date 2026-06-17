@@ -1,25 +1,25 @@
 // Custom application tables - add your own tables here
 // This file is NOT overwritten by Better Auth CLI
 
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 
 // Helper for generic timestamp columns
-const timestampColumns = {
+export const timestampColumns = {
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
     .defaultNow()
     .notNull(),
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
     .defaultNow()
     .notNull()
-    .$onUpdate(() => new Date()),
+    .$onUpdate(() => sql`now()`),
 };
 
-// TODO: EXAMPLE TABLE - you should remove this
 export const project = pgTable("project", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  ownerId: text("owner_id")
+  ownerId: uuid("owner_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   ...timestampColumns,

@@ -14,9 +14,11 @@ import { authFeature } from "@/server/features/auth";
 import { demo } from "@/server/features/demo";
 import { health } from "@/server/features/health";
 import { otel } from "@/server/features/otel";
+import { projects } from "@/server/features/projects";
 import { apiError } from "@/server/lib/http";
 import { logger } from "@/server/lib/logger";
 import { createRouter } from "@/server/lib/router";
+import { apiErrorMiddleware } from "@/server/middleware/api-error.middleware";
 import { sessionMiddleware } from "@/server/middleware/auth.middleware";
 import { dbMiddleware } from "@/server/middleware/db.middleware";
 
@@ -34,18 +36,19 @@ if (env.VITEST == null) {
 
 // API routes — traced and exposed via RPC.
 //
-// Middleware layering (see server/CONVENTIONS.md):
+// Middleware layering (see server/README.md):
 //   - Ambient providers run on every API route and make no access decision:
 //     they only populate context (optional user, db).
 //   - Access decisions are per-route guards (e.g. `requireAuth` on a route),
 //     never applied globally — so they can't leak onto sibling routes.
 const api = createRouter()
   // Ambient providers
-  .use(sessionMiddleware, dbMiddleware)
+  .use(apiErrorMiddleware, sessionMiddleware, dbMiddleware)
   // Features — each owns a prefix; protection is declared per-route inside it
   .route("/auth", authFeature)
   .route("/health", health)
-  .route("/demo", demo);
+  .route("/demo", demo)
+  .route("/projects", projects);
 
 const app = new Hono()
   // OTel proxy must be BEFORE tracing middleware (avoids recursive tracing)
@@ -91,9 +94,9 @@ app.onError((err, c) => {
 });
 
 // Static file serving and SPA fallback
-const isProd = env.ENV !== "development";
+const isProduction = env.ENV !== "development";
 
-if (isProd) {
+if (isProduction) {
   app.use(
     "*",
     serveStatic({
@@ -110,7 +113,7 @@ if (isProd) {
 // SPA fallback: serve index.html for any unmatched routes
 app.get("*", async (c) => {
   const html = await Bun.file(
-    isProd ? "./dist-static/index.html" : "./index.html",
+    isProduction ? "./dist-static/index.html" : "./index.html",
   ).text();
   return c.html(html);
 });

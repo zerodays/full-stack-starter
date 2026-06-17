@@ -9,6 +9,7 @@ import * as schema from "@/server/database/schema";
 
 export const auth = instrumentBetterAuth(
   betterAuth({
+    advanced: { database: { generateId: "uuid" } },
     database: drizzleAdapter(db, {
       provider: "pg",
       schema,

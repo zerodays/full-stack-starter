@@ -9,6 +9,10 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
  *
  * Use this on the *return* path — expected errors, including guards. The
  * unexpected path throws instead and is handled centrally by `onError`.
+ *
+ * Routes under the ambient API middleware get `c.apiError(status, message)` as
+ * sugar over this (see `api-error.middleware.ts`); call this form directly only
+ * outside that stack (e.g. the otel proxy, `app.notFound`/`app.onError`).
  */
 export const apiError = <S extends ContentfulStatusCode>(
   c: Context,

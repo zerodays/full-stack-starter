@@ -1,12 +1,12 @@
 import { trace } from "@opentelemetry/api";
 import * as Sentry from "@sentry/bun";
 import type { MiddlewareHandler } from "hono";
+import { createMiddleware } from "hono/factory";
 import { auth } from "@/server/lib/auth";
-import { apiError } from "@/server/lib/http";
 import { requestContext } from "@/server/lib/request-context";
 
 export type AuthMiddlewareVariables = {
-  user: typeof auth.$Infer.Session.user;
+  user?: typeof auth.$Infer.Session.user;
 };
 
 /**
@@ -43,12 +43,12 @@ export const sessionMiddleware: MiddlewareHandler = async (c, next) => {
  * Apply per-route (not globally) on the routes that need protection. Relies on
  * the ambient sessionMiddleware (or test auth middleware) having run first.
  */
-export const requireAuth: MiddlewareHandler = async (c, next) => {
-  const user = c.get("user");
-
-  if (!user) {
-    return apiError(c, 401, "Unauthorized");
+export const requireAuth = createMiddleware<{
+  Variables: { user: typeof auth.$Infer.Session.user };
+}>(async (c, next) => {
+  if (!c.get("user")) {
+    return c.apiError(401, "Unauthorized");
   }
 
   await next();
-};
+});

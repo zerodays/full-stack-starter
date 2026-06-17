@@ -1,5 +1,6 @@
 import type { Hono } from "hono";
 import { type AppEnv, createRouter } from "@/server/lib/router";
+import { apiErrorMiddleware } from "@/server/middleware/api-error.middleware";
 import testAuthMiddleware from "@/server/utils/testing/test-auth.middleware";
 import { createTestDb } from "@/server/utils/testing/test-db";
 import { createTestDbMiddleware } from "@/server/utils/testing/test-db.middleware";
@@ -26,6 +27,7 @@ export async function getTestApp(
 
   // Create fresh app instance to inject the db middleware
   const testApp = createRouter();
+  testApp.use(apiErrorMiddleware);
   testApp.use(createTestDbMiddleware(db));
   testApp.use(testAuthMiddleware);
   testApp.route("/", app);
