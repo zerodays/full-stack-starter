@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
 import { signIn, signOut, signUp, useSession } from "~/lib/auth-client";
 import { withSpan } from "~/tracing";
 
 export function AuthDemo() {
+  const { t } = useTranslation("common");
   const { data: session, isPending } = useSession();
   const [email, setEmail] = useState("demo@example.com");
   const [password, setPassword] = useState("password123");
@@ -14,92 +16,92 @@ export function AuthDemo() {
   const handleSignUp = () =>
     withSpan("auth.sign_up", { component: "AuthDemo" }, async () => {
       setError(null);
-      setStatus("Signing up...");
+      setStatus(t("signingUp"));
 
       const result = await signUp.email({ email, password, name });
 
       if (result.error) {
-        setError(result.error.message ?? "Signup failed");
+        setError(result.error.message ?? t("signupFailed"));
         setStatus(null);
       } else {
-        setStatus("Signed up successfully!");
+        setStatus(t("signedUpSuccess"));
       }
     });
 
   const handleSignIn = () =>
     withSpan("auth.sign_in", { component: "AuthDemo" }, async () => {
       setError(null);
-      setStatus("Signing in...");
+      setStatus(t("signingIn"));
 
       const result = await signIn.email({ email, password });
 
       if (result.error) {
-        setError(result.error.message ?? "Sign in failed");
+        setError(result.error.message ?? t("signinFailed"));
         setStatus(null);
       } else {
-        setStatus("Signed in successfully!");
+        setStatus(t("signedInSuccess"));
       }
     });
 
   const handleSignOut = () =>
     withSpan("auth.sign_out", { component: "AuthDemo" }, async () => {
       setError(null);
-      setStatus("Signing out...");
+      setStatus(t("signingOut"));
 
       await signOut();
-      setStatus("Signed out successfully!");
+      setStatus(t("signedOutSuccess"));
     });
 
   if (isPending) {
-    return <div className="text-muted-foreground">Loading session...</div>;
+    return <div className="text-muted-foreground">{t("loadingSession")}</div>;
   }
 
   return (
     <div className="flex w-full max-w-md flex-col gap-4 rounded-lg border p-6">
-      <h2 className="font-semibold text-xl">Auth Demo</h2>
+      <h2 className="font-semibold text-xl">{t("authDemoTitle")}</h2>
 
       {session ? (
         <div className="flex flex-col gap-4">
           <div className="rounded bg-green-50 p-3 text-green-800 text-sm dark:bg-green-950 dark:text-green-200">
-            <p className="font-medium">Signed in as:</p>
+            <p className="font-medium">{t("signedInAs")}</p>
             <p>{session.user.name}</p>
             <p className="text-green-600 dark:text-green-400">
               {session.user.email}
             </p>
           </div>
           <Button variant="outline" onClick={handleSignOut}>
-            Sign Out
+            {t("signOut")}
           </Button>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <input
             type="text"
-            placeholder="Name"
+            placeholder={t("authNamePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="rounded border px-3 py-2 text-sm"
           />
           <input
             type="email"
-            placeholder="Email"
+            placeholder={t("authEmailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="rounded border px-3 py-2 text-sm"
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder={t("authPasswordPlaceholder")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="rounded border px-3 py-2 text-sm"
           />
           <div className="flex gap-2">
             <Button onClick={handleSignUp} className="flex-1">
-              Sign Up
+              {t("signUp")}
             </Button>
             <Button variant="outline" onClick={handleSignIn} className="flex-1">
-              Sign In
+              {t("signIn")}
             </Button>
           </div>
         </div>
@@ -108,9 +110,7 @@ export function AuthDemo() {
       {status && <p className="text-muted-foreground text-sm">{status}</p>}
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      <p className="text-muted-foreground text-xs">
-        Auth actions are wrapped in OpenTelemetry spans. Check Axiom for traces!
-      </p>
+      <p className="text-muted-foreground text-xs">{t("authSpanNote")}</p>
     </div>
   );
 }

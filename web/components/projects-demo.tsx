@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { api } from "~/lib/api";
 import { useSession } from "~/lib/auth-client";
 
 export function ProjectsDemo() {
+  const { t } = useTranslation("common");
   const { data: session } = useSession();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
@@ -45,9 +47,9 @@ export function ProjectsDemo() {
   if (!session) {
     return (
       <div className="flex w-full max-w-md flex-col gap-2 rounded-lg border p-6">
-        <h2 className="font-semibold text-xl">Projects</h2>
+        <h2 className="font-semibold text-xl">{t("projectsTitle")}</h2>
         <p className="text-muted-foreground text-sm">
-          Sign in to see your projects.
+          {t("projectsSignInPrompt")}
         </p>
       </div>
     );
@@ -55,11 +57,11 @@ export function ProjectsDemo() {
 
   return (
     <div className="flex w-full max-w-md flex-col gap-4 rounded-lg border p-6">
-      <h2 className="font-semibold text-xl">Projects</h2>
+      <h2 className="font-semibold text-xl">{t("projectsTitle")}</h2>
 
       <div className="flex gap-2">
         <Input
-          placeholder="Project name"
+          placeholder={t("projectNamePlaceholder")}
           value={name}
           onChange={(event) => {
             setName(event.target.value);
@@ -72,14 +74,14 @@ export function ProjectsDemo() {
           onClick={() => createProject.mutate({ json: { name } })}
           disabled={!name || createProject.isPending}
         >
-          {createProject.isPending ? "Creating..." : "Create"}
+          {createProject.isPending ? t("creating") : t("create")}
         </Button>
       </div>
 
       {createError && <p className="text-red-600 text-sm">{createError}</p>}
 
       {projectsQuery.isPending ? (
-        <p className="text-muted-foreground text-sm">Loading...</p>
+        <p className="text-muted-foreground text-sm">{t("loading")}</p>
       ) : (
         <ul className="flex flex-col gap-1">
           {projectsQuery.data?.map((project) => (
@@ -96,7 +98,7 @@ export function ProjectsDemo() {
                 }
                 disabled={deleteProject.isPending}
               >
-                Delete
+                {t("delete")}
               </Button>
             </li>
           ))}
