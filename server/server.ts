@@ -18,6 +18,7 @@ import { projects } from "@/server/features/projects";
 import { apiError } from "@/server/lib/http";
 import { logger } from "@/server/lib/logger";
 import { createRouter } from "@/server/lib/router";
+import { apiErrorMiddleware } from "@/server/middleware/api-error.middleware";
 import { sessionMiddleware } from "@/server/middleware/auth.middleware";
 import { dbMiddleware } from "@/server/middleware/db.middleware";
 
@@ -42,7 +43,7 @@ if (env.VITEST == null) {
 //     never applied globally — so they can't leak onto sibling routes.
 const api = createRouter()
   // Ambient providers
-  .use(sessionMiddleware, dbMiddleware)
+  .use(apiErrorMiddleware, sessionMiddleware, dbMiddleware)
   // Features — each owns a prefix; protection is declared per-route inside it
   .route("/auth", authFeature)
   .route("/health", health)

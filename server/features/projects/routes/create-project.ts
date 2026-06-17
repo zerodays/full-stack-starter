@@ -2,7 +2,6 @@ import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
 import z from "zod";
 import { project } from "@/server/database/schema";
-import { apiError } from "@/server/lib/http";
 import { createRouter } from "@/server/lib/router";
 import { requireAuth } from "@/server/middleware/auth.middleware";
 
@@ -25,8 +24,7 @@ export const createProjectRoute = createRouter().post(
     const projectCount = await db.$count(project, eq(project.ownerId, user.id));
 
     if (projectCount >= PROJECT_COUNT_MAX) {
-      return apiError(
-        c,
+      return c.apiError(
         409,
         `Project limit reached. You can only create up to ${PROJECT_COUNT_MAX} projects.`,
       );

@@ -6,8 +6,10 @@
  * so they flow through TanStack's error channel — while the status code and
  * body shape stay typed (see `ApiErrorUnionOf` in `typed-client.ts`).
  */
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+
 export class ApiError<
-  Status extends number = number,
+  Status extends ContentfulStatusCode = ContentfulStatusCode,
   Body = unknown,
 > extends Error {
   readonly status: Status;

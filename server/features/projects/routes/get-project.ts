@@ -1,7 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { and, eq } from "drizzle-orm";
 import { project } from "@/server/database/schema";
-import { apiError } from "@/server/lib/http";
 import { createRouter } from "@/server/lib/router";
 import { requireAuth } from "@/server/middleware/auth.middleware";
 import { projectIdParamSchema } from "../validators";
@@ -21,7 +20,7 @@ export const getProjectRoute = createRouter().get(
     });
 
     if (!found) {
-      return apiError(c, 404, "Project not found");
+      return c.apiError(404, "Project not found");
     }
 
     return c.json(found);

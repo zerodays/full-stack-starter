@@ -3,7 +3,6 @@ import * as Sentry from "@sentry/bun";
 import type { MiddlewareHandler } from "hono";
 import { createMiddleware } from "hono/factory";
 import { auth } from "@/server/lib/auth";
-import { apiError } from "@/server/lib/http";
 import { requestContext } from "@/server/lib/request-context";
 
 export type AuthMiddlewareVariables = {
@@ -48,7 +47,7 @@ export const requireAuth = createMiddleware<{
   Variables: { user: typeof auth.$Infer.Session.user };
 }>(async (c, next) => {
   if (!c.get("user")) {
-    return apiError(c, 401, "Unauthorized");
+    return c.apiError(401, "Unauthorized");
   }
 
   await next();
