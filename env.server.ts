@@ -27,8 +27,6 @@ const env = createEnv({
     VITEST: z.string().optional(),
   },
 
-  // TODO: client secrets
-
   runtimeEnvStrict: {
     APP_NAME: runtimeEnv.APP_NAME,
     ENV: runtimeEnv.ENV,
