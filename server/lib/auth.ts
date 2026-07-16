@@ -3,7 +3,7 @@ import { instrumentBetterAuth } from "@kubiks/otel-better-auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins";
-import env from "@/env";
+import env from "@/env.server";
 import { db } from "@/server/database";
 import * as schema from "@/server/database/schema";
 

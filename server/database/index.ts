@@ -3,7 +3,7 @@ import { instrumentDrizzleClient } from "@kubiks/otel-drizzle";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import env from "@/env";
+import env from "@/env.server";
 import * as schema from "./schema";
 
 const migrationsFolder = resolve(process.cwd(), "server/database/migrations");

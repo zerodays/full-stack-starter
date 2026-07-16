@@ -9,7 +9,7 @@ import {
   ATTR_SERVICE_VERSION,
 } from "@opentelemetry/semantic-conventions";
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from "@opentelemetry/semantic-conventions/incubating";
-import env from "@/env";
+import env from "@/env.server";
 
 if (env.AXIOM_TOKEN && env.AXIOM_DATASET) {
   // Only propagate trace headers to our own domain to avoid leaking context to third parties

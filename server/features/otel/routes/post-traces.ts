@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import env from "@/env";
+import env from "@/env.server";
 import { apiError } from "@/server/lib/http";
 import { logger } from "@/server/lib/logger";
 

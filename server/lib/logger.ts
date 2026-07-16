@@ -1,6 +1,6 @@
 import { trace } from "@opentelemetry/api";
 import pino from "pino";
-import env from "@/env";
+import env from "@/env.server";
 import { requestContext } from "./request-context";
 
 /**
