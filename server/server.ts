@@ -8,7 +8,7 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { HTTPException } from "hono/http-exception";
 import { routePath } from "hono/route";
-import env from "@/env";
+import env from "@/env.server";
 import { runMigrations } from "@/server/database";
 import { authFeature } from "@/server/features/auth";
 import { demo } from "@/server/features/demo";
@@ -21,6 +21,11 @@ import { createRouter } from "@/server/lib/router";
 import { apiErrorMiddleware } from "@/server/middleware/api-error.middleware";
 import { sessionMiddleware } from "@/server/middleware/auth.middleware";
 import { dbMiddleware } from "@/server/middleware/db.middleware";
+import { crawlers } from "./crawlers";
+import {
+  noIndexMiddleware,
+  shouldAllowSearchIndexing,
+} from "./middleware/no-index.middleware";
 
 // First, init Sentry to capture errors
 Sentry.init({
@@ -58,7 +63,19 @@ const app = new Hono()
     httpInstrumentationMiddleware({
       spanNameFactory: (c) => `${c.req.method} ${routePath(c) ?? c.req.path}`,
     }),
-  )
+  );
+
+// If running in "development" or "staging" environment, add a `X-Robots-Tag:
+// noindex` header so that the crawlers don't index our site. Conditionally add
+// the middleware to the app so that it is not executed on *every* request in
+// production.
+if (!shouldAllowSearchIndexing) {
+  app.use(noIndexMiddleware);
+}
+
+app
+  // Top-level routes for crawlers: robots.txt (and possibly sitemap.xml)
+  .route("/", crawlers)
   // Traced API routes - mounted AFTER middleware
   .route("/api", api);
 
